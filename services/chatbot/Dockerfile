@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src /app
 COPY certs /app/certs
 COPY retrieval /app/retrieval
-ENV PYTHONPATH "${PYTHONPATH}:/app"
+ENV PYTHONPATH="/app"
 COPY entrypoint.sh /app/entrypoint.sh
 CMD /app/entrypoint.sh
-EXPOSE 5002
+EXPOSE 5002 5500

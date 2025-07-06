@@ -19,13 +19,22 @@ interface State {
   initializationRequired?: boolean;
   initializing?: boolean;
   accessToken: string;
+  chatHistory: ChatMessage[];
+}
+
+export interface ChatMessage {
+  role: string;
+  content: string;
+  id: number;
+  loading?: boolean;
+  terminateLoading?: boolean;
 }
 
 interface ActionProvider {
   handleHelp: (initRequired: boolean) => void;
   handleInitialize: (initRequired: boolean) => void;
   handleResetContext: (accessToken: string) => void;
-  handleInitialized: (message: string, accessToken: string) => void;
+  handleInitialized: (message: string, accessToken: string, chatHistory: ChatMessage[]) => void;
   handleNotInitialized: () => void;
   handleChat: (message: string, accessToken: string) => void;
 }
@@ -39,12 +48,13 @@ class MessageParser {
     this.state = state;
   }
 
-  async initializationRequired(): Promise<boolean> {
+  async initializationRequired(): Promise<[boolean, ChatMessage[]]> {
     const stateUrl = APIService.CHATBOT_SERVICE + "genai/state";
     let initRequired = false;
+    let chatHistory: ChatMessage[] = [];
     // Wait for the response
     await request
-      .post(stateUrl)
+      .get(stateUrl)
       .set("Accept", "application/json")
       .set("Content-Type", "application/json")
       .set("Authorization", `Bearer ${this.state.accessToken}`)
@@ -53,6 +63,9 @@ class MessageParser {
         if (res.status === 200) {
           if (res.body?.initialized === "true") {
             initRequired = false;
+            if (res.body?.chat_history) {
+              chatHistory = res.body?.chat_history;
+            }
           } else {
             initRequired = true;
           }
@@ -61,8 +74,9 @@ class MessageParser {
       .catch((err) => {
         console.log("Error prefetch: ", err);
       });
+    
     console.log("Initialization required:", initRequired);
-    return initRequired;
+    return [initRequired, chatHistory];
   }
 
   async parse(message: string): Promise<void> {
@@ -70,15 +84,21 @@ class MessageParser {
     console.log("Message:", message);
     const message_l = message.toLowerCase();
     if (this.state?.initializationRequired === undefined) {
-      this.state.initializationRequired = await this.initializationRequired();
+      const [initRequired, chatHistory] = await this.initializationRequired();
+      this.state.initializationRequired = initRequired;
+      this.state.chatHistory = chatHistory;
       console.log("State check:", this.state);
     }
     if (message_l === "help") {
-      this.state.initializationRequired = await this.initializationRequired();
+      const [initRequired, chatHistory] = await this.initializationRequired();
+      this.state.initializationRequired = initRequired;
+      this.state.chatHistory = chatHistory;
       console.log("State help:", this.state);
       return this.actionProvider.handleHelp(this.state.initializationRequired);
     } else if (message_l === "init" || message_l === "initialize") {
-      this.state.initializationRequired = await this.initializationRequired();
+      const [initRequired, chatHistory] = await this.initializationRequired();
+      this.state.initializationRequired = initRequired;
+      this.state.chatHistory = chatHistory;
       console.log("State init:", this.state);
       return this.actionProvider.handleInitialize(
         this.state.initializationRequired,
@@ -93,6 +113,7 @@ class MessageParser {
       return this.actionProvider.handleInitialized(
         message,
         this.state.accessToken,
+        this.state.chatHistory
       );
     } else if (this.state.initializationRequired) {
       return this.actionProvider.handleNotInitialized();

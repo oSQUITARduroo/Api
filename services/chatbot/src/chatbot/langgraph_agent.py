@@ -97,13 +97,10 @@ Use the tools only if you don't know the answer.
     return agent_node
 
 
-async def execute_langgraph_agent(api_key, message, history, session_id=None):
+async def execute_langgraph_agent(api_key, messages, session_id=None):
     agent = await build_langgraph_agent(api_key, session_id)
-    print("Message", message)
-    print("History", history)
-    wrapped_message = {"role": "user", "content": message}
-    history.append(wrapped_message)
+    print("messages", messages)
     print("Session ID", session_id)
-    response = await agent.ainvoke({"messages": history})
+    response = await agent.ainvoke({"messages": messages})
     print("Response", response)
     return response

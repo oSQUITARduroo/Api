@@ -17,9 +17,9 @@ import React, { useState, useEffect } from "react";
 
 import config from "./config";
 import { APIService } from "../../constants/APIConstant";
-import MessageParser from "./MessageParser";
-import ActionProvider from "./ActionProvider";
-import Chatbot from "react-chatbot-kit";
+import MessageParser, { ChatMessage } from "./MessageParser";
+import ActionProvider from "./ActionProvider"; 
+import Chatbot, { createChatBotMessage } from "react-chatbot-kit";
 import { Row, Col } from "antd";
 import { Space } from "antd";
 import Icon, {
@@ -51,6 +51,7 @@ interface ChatBotState {
   accessToken: string;
   isLoggedIn: boolean;
   role: string;
+  messages: ChatMessage[]; // ChatBotMessage[] or IMessage[]
 }
 
 interface ChatBotComponentProps {
@@ -67,9 +68,11 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
     accessToken: props.accessToken,
     isLoggedIn: props.isLoggedIn,
     role: props.role,
+    messages: [],
   });
 
-  const [showBot, toggleBot] = useState<boolean>(false);
+  // Set to true so chatbot is open on UI load
+  const [showBot, toggleBot] = useState<boolean>(true);
 
   const headerText = (): JSX.Element => {
     return (
@@ -109,9 +112,10 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
     const fetchInit = async () => {
       const stateUrl = APIService.CHATBOT_SERVICE + "genai/state";
       let initRequired = false;
+      let chatHistory: ChatMessage[] = [];
       // Wait for the response
       await superagent
-        .post(stateUrl)
+        .get(stateUrl)
         .set("Accept", "application/json")
         .set("Content-Type", "application/json")
         .set("Authorization", `Bearer ${props.accessToken}`)
@@ -120,6 +124,17 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
           if (res.status === 200) {
             if (res.body?.initialized === "true") {
               initRequired = false;
+              if (res.body?.chat_history) {
+                chatHistory = res.body?.chat_history;
+                setChatbotState((prev) => ({
+                  ...prev,
+                  messages: chatHistory.map(msg => ({
+                    role: msg.role,
+                    content: msg.content,
+                    id: msg.id,
+                  })),
+                }));
+              }
             } else {
               initRequired = true;
             }
@@ -152,35 +167,190 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
     state: chatbotState,
   };
 
-  const saveMessages = (messages: any[]): void => {
-    localStorage.setItem("chat_messages", JSON.stringify(messages));
+  // Convert ChatMessage[] to IMessage[] for UI
+  const chatMessagesToIMessages = (messages: ChatMessage[]): IMessage[] =>
+    messages.map(msg => ({
+      id: msg.id,
+      message: msg.content,
+      type: msg.role === "assistant" ? "bot" : "user"
+    }));
+
+  // Dynamic initialMessages state
+  const [initialMessages, setInitialMessages] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      const history = await fetchChatHistoryFromBackend(); // returns ChatMessage[]
+      setInitialMessages(
+        history.length > 0
+          ? history.map(msg =>
+              createChatBotMessage(msg.content, {})
+            )
+          : [
+              createChatBotMessage(
+                `Hi, Welcome to crAPI! I'm CrapBot, and I'm here to be exploited.`,
+                {}
+              ),
+            ]
+      );
+    }
+    fetchHistory();
+  }, []);
+
+  // Debug: log messages before rendering
+  console.log("messages for UI:", chatbotState.messages);
+
+  // Canonical message type is ChatMessage (imported above)
+
+  // Define IMessage for react-chatbot-kit compatibility
+  interface IMessage {
+    id: number;
+    message: string;
+    type: string; // required
+  }
+  
+  // Remount Chatbot only on clear, reset, or init
+  const [chatbotInstanceKey, setChatbotInstanceKey] = useState(0);
+
+  // Convert ChatMessage[] (backend/state) <-> IMessage[] (UI)
+  const chatHistoryToIMessage = (history: ChatMessage[]): IMessage[] =>
+    history.map((msg, idx) => ({
+      id: idx, // number, not string
+      message: msg.content,
+      type: msg.role === "assistant" ? "bot" : "user", // always string
+    }));
+
+  // Use ChatMessage for all state/history updates
+  const addResponseMessage = (message: ChatMessage): void => {
+    setChatbotState((state) => ({
+      ...state,
+      messages: [...state.messages, message],
+    }));
   };
 
-  const loadMessages = (): any[] => {
-    const messages = JSON.parse(localStorage.getItem("chat_messages") || "[]");
-    return messages;
+  // Fetch chat history from backend
+  const fetchChatHistoryFromBackend = async (): Promise<ChatMessage[]> => {
+    try {
+      const res = await superagent
+        .get(APIService.CHATBOT_SERVICE + "genai/history")
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .set("Authorization", `Bearer ${props.accessToken}`);
+      console.log("Fetched chat history:", res.body);
+      return res.body?.chat_history || [];
+    } catch (err) {
+      console.error("Failed to fetch chat history from backend", err);
+      return [];
+    }
   };
 
-  const clearHistory = (): void => {
-    localStorage.removeItem("chat_messages");
+  // Save messages to backend and re-fetch
+  const saveMessages = (messages: IMessage[]): void => {
+    // Update UI state immediately (optimistic UI)
+    setChatbotState(prev => ({
+      ...prev,
+      messages: iMessageToChatHistory(messages),
+    }));
+
+    // Sync with backend in the background
+    (async () => {
+      const chatHistory = iMessageToChatHistory(messages);
+      try {
+        await superagent
+          .get(APIService.CHATBOT_SERVICE + "genai/state")
+          .set("Accept", "application/json")
+          .set("Content-Type", "application/json")
+          .set("Authorization", `Bearer ${props.accessToken}`)
+          .send({ chat_history: chatHistory });
+        // Do NOT re-fetch or remount here!
+      } catch (err) {
+        console.error("Failed to save chat history to backend", err);
+      }
+    })();
   };
 
-  console.log("Config state", config_chatbot);
+  // IMessage for react-chatbot-kit UI
+  interface IMessage {
+    id: number;
+    message: string;
+    type: string; // "bot" or "user"
+  }
+
+  // Convert IMessage[] (UI) to ChatMessage[] (backend)
+  const iMessageToChatHistory = (messages: IMessage[]): ChatMessage[] =>
+    messages.map(msg => ({
+      role: msg.type === "bot" ? "assistant" : "user",
+      content: msg.message,
+      id: msg.id,
+    }));
+
+  const loadMessages = (): IMessage[] | undefined => {
+    const msgs = chatHistoryToIMessage(chatbotState.messages);
+    return msgs.length > 0 ? msgs : undefined;
+  };
+
+  const clearHistory = async (): Promise<void> => {
+    try {
+      await superagent
+        .get(APIService.CHATBOT_SERVICE + "genai/state")
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .set("Authorization", `Bearer ${props.accessToken}`)
+        .send({ chat_history: [] });
+      const latestHistory = await fetchChatHistoryFromBackend();
+      setChatbotState(prev => ({
+        ...prev,
+        messages: latestHistory,
+      }));
+      setChatbotInstanceKey(prev => prev + 1);
+    } catch (err) {
+      console.error("Failed to clear chat history on backend", err);
+    }
+  };
+
+  const resetHistory = async (): Promise<void> => {
+    try {
+      await superagent
+        .get(APIService.CHATBOT_SERVICE + "genai/state")
+        .set("Accept", "application/json")
+        .set("Content-Type", "application/json")
+        .set("Authorization", `Bearer ${props.accessToken}`)
+        .send({ chat_history: [] });
+      const latestHistory = await fetchChatHistoryFromBackend();
+      setChatbotState(prev => ({
+        ...prev,
+        messages: latestHistory,
+      }));
+      setChatbotInstanceKey(prev => prev + 1);
+    } catch (err) {
+      console.error("Failed to reset chat history on backend", err);
+    }
+  };
+
+
   return (
     <Row>
       <Col xs={10}>
         <div className="app-chatbot-container">
           <div style={{ maxWidth: "500px" }}>
-            {showBot && (
+            {/* Chatbot loads chat history from backend and renders it on UI load */}
+            {showBot && initialMessages === null && <div>Loading chat...</div>}
+            {showBot && initialMessages !== null && (
               <Chatbot
-                config={config_chatbot}
+                key={chatbotInstanceKey}
+                config={{
+                  ...config_chatbot,
+                  initialMessages: initialMessages,
+                }}
                 actionProvider={ActionProvider}
                 messageParser={MessageParser}
                 saveMessages={saveMessages}
-                messageHistory={loadMessages()}
+                messageHistory={chatMessagesToIMessages(chatbotState.messages)}
                 placeholderText={"Type something..."}
+                runInitialMessagesWithHistory={true}
               />
             )}
+
             <button
               className="app-chatbot-button"
               onClick={() => toggleBot((prev) => !prev)}

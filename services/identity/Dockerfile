@@ -39,7 +39,7 @@ ARG SERVER_PORT
 EXPOSE ${SERVER_PORT}
 EXPOSE 10001
 
-ENV JAVA_TOOL_OPTIONS "-Xmx128m"
+ENV JAVA_TOOL_OPTIONS="-Xmx128m"
 
 COPY jwks.json /app/default_jwks.json
 COPY entrypoint.sh /entrypoint.sh

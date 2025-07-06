@@ -1,7 +1,6 @@
 import logging
-
 from quart import Blueprint, jsonify, request, session
-
+from uuid import uuid4
 from .chat_service import delete_chat_history, get_chat_history, process_user_message
 from .session_service import (
     delete_api_key,
@@ -43,11 +42,12 @@ async def chat():
     if not openai_api_key:
         return jsonify({"message": "Missing OpenAI API key. Please authenticate."}), 400
     data = await request.get_json()
-    question = data.get("question", "").strip()
-    if not question:
-        return jsonify({"message": "Question is required"}), 400
-    reply = await process_user_message(session_id, question, openai_api_key)
-    return jsonify({"answer": reply}), 200
+    message = data.get("message", "").strip()
+    id = data.get("id", uuid4().int & (1 << 63) - 1)
+    if not message:
+        return jsonify({"message": "Message is required", "id": id}), 400
+    reply, response_id = await process_user_message(session_id, message, openai_api_key)
+    return jsonify({"id": response_id, "message": reply}), 200
 
 
 @chat_bp.route("/state", methods=["GET"])
@@ -56,9 +56,28 @@ async def state():
     logger.debug("Checking state for session %s", session_id)
     openai_api_key = await get_api_key(session_id)
     if openai_api_key:
-        return jsonify({"initialized": "true", "message": "Model initialized"}), 200
+        logger.debug("OpenAI API Key for session %s: %s", session_id, openai_api_key[:5])
+        chat_history = await get_chat_history(session_id)
+        # Limit chat history to last 20 messages
+        chat_history = chat_history[-20:]
+        return jsonify({"initialized": "true", "message": "Model initialized", "chat_history": chat_history}), 200
     return (
         jsonify({"initialized": "false", "message": "Model needs to be initialized"}),
+        200,
+    )
+    
+@chat_bp.route("/history", methods=["GET"])
+async def history():
+    session_id = await get_or_create_session_id()
+    logger.debug("Checking state for session %s", session_id)
+    openai_api_key = await get_api_key(session_id)
+    if openai_api_key:
+        chat_history = await get_chat_history(session_id)
+        # Limit chat history to last 20 messages
+        chat_history = chat_history[-20:]
+        return jsonify({"chat_history": chat_history}), 200
+    return (
+        jsonify({"chat_history": []}),
         200,
     )
 

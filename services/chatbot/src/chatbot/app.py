@@ -12,7 +12,7 @@ root_bp.register_blueprint(chat_bp)
 
 @root_bp.route("/", methods=["GET"])
 async def index():
-    return jsonify({"message": "Hello, World!"}), 200
+    return jsonify({"message": "Hello from chatbot!"}), 200
 
 
 app = Quart(__name__)

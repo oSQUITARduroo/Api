@@ -10,6 +10,7 @@ import argparse
 import logging
 import os
 from typing import Any, Dict, List, Optional, Union
+import asyncio
 
 import httpx
 from mcp.server.fastmcp import Context, FastMCP
@@ -19,29 +20,47 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # Create MCP server
-app = FastMCP(name="OWASP crAPI MCP Server")
+mcp = FastMCP(name="OWASP crAPI MCP Server")
+mcp.settings.host = "0.0.0.0"
+mcp_server_port = int(os.environ.get("MCP_SERVER_PORT", 5500))
+mcp.settings.port = mcp_server_port
 
 # API configuration
-API_URL = os.environ.get("API_URL", "http://crapi.allvapps.com:30080")
-API_TOKEN = os.environ.get(
-    "API_TOKEN",
-    "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJHYXJmaWVsZC5MaW5kZ3JlbkBleGFtcGxlLmNvbSIsImlhdCI6MTc1MTU2ODczNiwiZXhwIjoxNzUyMTczNTM2LCJyb2xlIjoidXNlciJ9.ampuVX-YCNFPMwVycsz-wm9lESLozTeB7EAntV2WvBqd49XpwTBIY7FIk7tLEaEZ8PrZDEDIV1Dfoy235WBwTIznmT6frOE-z0tJoX45tRW6Elz3XO1XuWrA0RQWcClEJQ5hIsvlDvZjWHYfDrq7q_o5iKxn7Tdch19s_pSVKmfOaJ3p6-VIX1f_YnsMo4SZQaDspPvtMLlojwmeE1bfrsbA_lyt8YBovFCCFeI2WKGxk2-uNIThrCG1koP_cNoTS2TQkWDmc4-bwFybXTWgLG82InkWk4nqKfquRF6HVhTSztSq1AmIpUR3zF_tUkMPkT5b-Lps_PEXmJPC9-ObBg",
-)
-API_AUTH_TYPE = os.environ.get("API_AUTH_TYPE", "Bearer")
+WEB_SERVICE = os.environ.get("WEB_SERVICE", "crapi-web:8888")
+TLS_ENABLED = os.environ.get("TLS_ENABLED", "false").lower() in ("true", "1", "yes")
+API_URL = f"{'https' if TLS_ENABLED else 'http'}://{WEB_SERVICE}"
+API_USER = os.environ.get("API_USER", "admin")
+API_PASSWORD = os.environ.get("API_PASSWORD", "Admin!123")
 
+API_KEY = None
+API_AUTH_TYPE = "ApiKey"
 
+async def get_api_key():
+    if API_KEY is None:
+        login_body = {
+            "username": API_USER,
+            "password": API_PASSWORD
+        }
+        apikey_url = f"{API_URL}/identity/management/user/apikey"
+        headers = {}
+        async with httpx.AsyncClient(
+                    base_url=API_URL,
+                    headers=headers,
+                ) as client:
+            response = await client.post(apikey_url, json=login_body)
+            response.raise_for_status()
+            API_KEY = response.json().get("apiKey")
+            logger.info(f"Chatbot API Key: {API_KEY[:5]}...")
+            return API_KEY
+    return API_KEY
+        
 # Async HTTP client for API calls
 async def get_http_client():
     """Create and configure the HTTP client with appropriate authentication."""
     headers = {}
-
-    if API_AUTH_TYPE == "Bearer":
-        headers["Authorization"] = f"Bearer {API_TOKEN}"
-    elif API_AUTH_TYPE == "token":
-        headers["Authorization"] = API_TOKEN
-
     return httpx.AsyncClient(
         base_url=API_URL,
         headers=headers,
@@ -50,8 +69,7 @@ async def get_http_client():
 
 # MCP tools for API operations
 
-
-@app.tool(description="Used to create an account")
+@mcp.tool(description="Used to create an account")
 async def signup(ctx: Context) -> str:
     """
     Used to create an account
@@ -82,7 +100,7 @@ async def signup(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="POST /identity/api/auth/login")
+@mcp.tool(description="POST /identity/api/auth/login")
 async def login(ctx: Context) -> str:
     """
     POST /identity/api/auth/login
@@ -113,7 +131,7 @@ async def login(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Sends an OTP to email to reset password")
+@mcp.tool(description="Sends an OTP to email to reset password")
 async def forgot_password(ctx: Context) -> str:
     """
     Sends an OTP to email to reset password
@@ -144,7 +162,7 @@ async def forgot_password(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="To validate the One-Time-Password sent using `forgot password`")
+@mcp.tool(description="To validate the One-Time-Password sent using `forgot password`")
 async def check_otp_v3(ctx: Context) -> str:
     """
     To validate the One-Time-Password sent using `forgot password`
@@ -175,7 +193,7 @@ async def check_otp_v3(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="To validate the One-Time-Password sent using `forgot password`")
+@mcp.tool(description="To validate the One-Time-Password sent using `forgot password`")
 async def check_otp_v2(ctx: Context) -> str:
     """
     To validate the One-Time-Password sent using `forgot password`
@@ -206,7 +224,7 @@ async def check_otp_v2(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="POST /identity/api/auth/v4.0/user/login-with-token")
+@mcp.tool(description="POST /identity/api/auth/v4.0/user/login-with-token")
 async def login_with_token(ctx: Context) -> str:
     """
     POST /identity/api/auth/v4.0/user/login-with-token
@@ -237,7 +255,7 @@ async def login_with_token(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="POST /identity/api/auth/v2.7/user/login-with-token")
+@mcp.tool(description="POST /identity/api/auth/v2.7/user/login-with-token")
 async def login_with_token_v2_7(ctx: Context) -> str:
     """
     POST /identity/api/auth/v2.7/user/login-with-token
@@ -268,7 +286,7 @@ async def login_with_token_v2_7(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Reset user password using JWT token")
+@mcp.tool(description="Reset user password using JWT token")
 async def reset_password(ctx: Context) -> str:
     """
     Reset user password using JWT token
@@ -299,7 +317,7 @@ async def reset_password(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Sends token to new email")
+@mcp.tool(description="Sends token to new email")
 async def change_email(ctx: Context) -> str:
     """
     Sends token to new email
@@ -330,7 +348,7 @@ async def change_email(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Verify token sent for changing email")
+@mcp.tool(description="Verify token sent for changing email")
 async def verify_email_token(ctx: Context) -> str:
     """
     Verify token sent for changing email
@@ -361,7 +379,7 @@ async def verify_email_token(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="GET /identity/api/v2/user/dashboard")
+@mcp.tool(description="GET /identity/api/v2/user/dashboard")
 async def get_dashboard(ctx: Context) -> str:
     """
     GET /identity/api/v2/user/dashboard
@@ -392,7 +410,7 @@ async def get_dashboard(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="POST /identity/api/v2/user/pictures")
+@mcp.tool(description="POST /identity/api/v2/user/pictures")
 async def update_profile_pic(ctx: Context) -> str:
     """
     POST /identity/api/v2/user/pictures
@@ -423,7 +441,7 @@ async def update_profile_pic(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="POST /identity/api/v2/user/videos")
+@mcp.tool(description="POST /identity/api/v2/user/videos")
 async def upload_profile_video(ctx: Context) -> str:
     """
     POST /identity/api/v2/user/videos
@@ -454,7 +472,7 @@ async def upload_profile_video(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Get the video associated with the user's profile.")
+@mcp.tool(description="Get the video associated with the user's profile.")
 async def get_profile_video(video_id: int, ctx: Context) -> str:
     """
     Get the video associated with the user's profile.
@@ -488,7 +506,7 @@ async def get_profile_video(video_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Update the video identified by video_id in this user's profile.")
+@mcp.tool(description="Update the video identified by video_id in this user's profile.")
 async def update_profile_video(video_id: int, ctx: Context) -> str:
     """
     Update the video identified by video_id in this user's profile.
@@ -522,7 +540,7 @@ async def update_profile_video(video_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(
+@mcp.tool(
     description="Delete the video identified by video_id from this user's profile."
 )
 async def delete_profile_video(video_id: int, ctx: Context) -> str:
@@ -558,7 +576,7 @@ async def delete_profile_video(video_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Convert the format for the specified video.")
+@mcp.tool(description="Convert the format for the specified video.")
 async def convert_profile_video(ctx: Context, video_id: int = 0) -> str:
     """
     Convert the format for the specified video.
@@ -592,7 +610,7 @@ async def convert_profile_video(ctx: Context, video_id: int = 0) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Delete profile video of other users by video_id as admin")
+@mcp.tool(description="Delete profile video of other users by video_id as admin")
 async def admin_delete_profile_video(video_id: int, ctx: Context) -> str:
     """
     Delete profile video of other users by video_id as admin
@@ -626,7 +644,7 @@ async def admin_delete_profile_video(video_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="GET /identity/api/v2/vehicle/vehicles")
+@mcp.tool(description="GET /identity/api/v2/vehicle/vehicles")
 async def get_vehicles(ctx: Context) -> str:
     """
     GET /identity/api/v2/vehicle/vehicles
@@ -657,7 +675,7 @@ async def get_vehicles(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="POST /identity/api/v2/vehicle/add_vehicle")
+@mcp.tool(description="POST /identity/api/v2/vehicle/add_vehicle")
 async def add_vehicle(ctx: Context) -> str:
     """
     POST /identity/api/v2/vehicle/add_vehicle
@@ -688,7 +706,7 @@ async def add_vehicle(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Get user's vehicle location")
+@mcp.tool(description="Get user's vehicle location")
 async def get_location(ctx: Context) -> str:
     """
     Get user's vehicle location
@@ -719,7 +737,7 @@ async def get_location(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Resend vehicles details to be added to the user dashboard")
+@mcp.tool(description="Resend vehicles details to be added to the user dashboard")
 async def vehicle_resend_email(ctx: Context) -> str:
     """
     Resend vehicles details to be added to the user dashboard
@@ -750,7 +768,7 @@ async def vehicle_resend_email(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get a specific post in the forum")
+@mcp.tool(description="Used to get a specific post in the forum")
 async def get_post(ctx: Context) -> str:
     """
     Used to get a specific post in the forum
@@ -781,7 +799,7 @@ async def get_post(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to create a new post in the forum")
+@mcp.tool(description="Used to create a new post in the forum")
 async def create_post(ctx: Context) -> str:
     """
     Used to create a new post in the forum
@@ -812,7 +830,7 @@ async def create_post(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to add a comment to an existing post in the forum")
+@mcp.tool(description="Used to add a comment to an existing post in the forum")
 async def post_comment(ctx: Context) -> str:
     """
     Used to add a comment to an existing post in the forum
@@ -843,7 +861,7 @@ async def post_comment(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to fetch the most recent posts in the forum.")
+@mcp.tool(description="Used to fetch the most recent posts in the forum.")
 async def get_recent_posts(ctx: Context, limit: int = 0, offset: int = 0) -> str:
     """
     Used to fetch the most recent posts in the forum.
@@ -879,7 +897,7 @@ async def get_recent_posts(ctx: Context, limit: int = 0, offset: int = 0) -> str
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to add a new coupon to the shop database")
+@mcp.tool(description="Used to add a new coupon to the shop database")
 async def add_new_coupon(ctx: Context) -> str:
     """
     Used to add a new coupon to the shop database
@@ -910,7 +928,7 @@ async def add_new_coupon(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to validate the provided discount coupon code")
+@mcp.tool(description="Used to validate the provided discount coupon code")
 async def validate_coupon(ctx: Context) -> str:
     """
     Used to validate the provided discount coupon code
@@ -941,7 +959,7 @@ async def validate_coupon(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get products for the shop")
+@mcp.tool(description="Used to get products for the shop")
 async def get_products(ctx: Context) -> str:
     """
     Used to get products for the shop
@@ -973,7 +991,7 @@ async def get_products(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to add the specified product to the product catalog.")
+@mcp.tool(description="Used to add the specified product to the product catalog.")
 async def add_new_product(ctx: Context) -> str:
     """
     Used to add the specified product to the product catalog.
@@ -1004,7 +1022,7 @@ async def add_new_product(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to create a new order for a product in the shop.")
+@mcp.tool(description="Used to create a new order for a product in the shop.")
 async def create_order(ctx: Context) -> str:
     """
     Used to create a new order for a product in the shop.
@@ -1035,7 +1053,7 @@ async def create_order(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to update the order specified by the order_id.")
+@mcp.tool(description="Used to update the order specified by the order_id.")
 async def update_order(order_id: int, ctx: Context) -> str:
     """
     Used to update the order specified by the order_id.
@@ -1069,7 +1087,7 @@ async def update_order(order_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get the order details for order identified by order_id.")
+@mcp.tool(description="Used to get the order details for order identified by order_id.")
 async def get_order_byID(order_id: int, ctx: Context) -> str:
     """
     Used to get the order details for order identified by order_id.
@@ -1103,7 +1121,7 @@ async def get_order_byID(order_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get user's past orders")
+@mcp.tool(description="Used to get user's past orders")
 async def get_orders(limit: int, offset: int, ctx: Context) -> str:
     """
     Used to get user's past orders
@@ -1139,7 +1157,7 @@ async def get_orders(limit: int, offset: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to return order specified by the order_id")
+@mcp.tool(description="Used to return order specified by the order_id")
 async def return_order(order_id: int, ctx: Context) -> str:
     """
     Used to return order specified by the order_id
@@ -1173,7 +1191,7 @@ async def return_order(order_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to apply the coupon for the current user.")
+@mcp.tool(description="Used to apply the coupon for the current user.")
 async def apply_coupon(ctx: Context) -> str:
     """
     Used to apply the coupon for the current user.
@@ -1204,7 +1222,7 @@ async def apply_coupon(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get the return qr code image for UPS shipments.")
+@mcp.tool(description="Used to get the return qr code image for UPS shipments.")
 async def get_workshop_qr_code(Accept: str, ctx: Context) -> str:
     """
     Used to get the return qr code image for UPS shipments.
@@ -1235,7 +1253,7 @@ async def get_workshop_qr_code(Accept: str, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get all the users in the workshop database.")
+@mcp.tool(description="Used to get all the users in the workshop database.")
 async def get_workshop_users_all(ctx: Context, limit: int = 0, offset: int = 0) -> str:
     """
     Used to get all the users in the workshop database.
@@ -1271,7 +1289,7 @@ async def get_workshop_users_all(ctx: Context, limit: int = 0, offset: int = 0) 
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get all the available mechanics")
+@mcp.tool(description="Used to get all the available mechanics")
 async def get_mechanics(ctx: Context) -> str:
     """
     Used to get all the available mechanics
@@ -1302,7 +1320,7 @@ async def get_mechanics(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(
+@mcp.tool(
     description="Used to contact a mechanic for a service request on your vehicle"
 )
 async def contact_mechanic(ctx: Context) -> str:
@@ -1335,7 +1353,7 @@ async def contact_mechanic(ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to create the service report and assign to the mechanic")
+@mcp.tool(description="Used to create the service report and assign to the mechanic")
 async def create_service_report(
     mechanic_code: str, problem_details: str, vin: str, ctx: Context
 ) -> str:
@@ -1375,7 +1393,7 @@ async def create_service_report(
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to get the service report specified by the report_id")
+@mcp.tool(description="Used to get the service report specified by the report_id")
 async def get_report_byID(report_id: int, ctx: Context) -> str:
     """
     Used to get the service report specified by the report_id
@@ -1409,7 +1427,7 @@ async def get_report_byID(report_id: int, ctx: Context) -> str:
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Fetch all service requests assigned to this specific mechanic.")
+@mcp.tool(description="Fetch all service requests assigned to this specific mechanic.")
 async def get_service_requests_for_mechanic(
     limit: int, offset: int, ctx: Context
 ) -> str:
@@ -1447,7 +1465,7 @@ async def get_service_requests_for_mechanic(
             return f"Error: {str(e)}"
 
 
-@app.tool(description="Used to register a new mechanic in the workshop.")
+@mcp.tool(description="Used to register a new mechanic in the workshop.")
 async def mechanic_signup(ctx: Context) -> str:
     """
     Used to register a new mechanic in the workshop.
@@ -1481,7 +1499,7 @@ async def mechanic_signup(ctx: Context) -> str:
 # MCP resources
 
 
-@app.resource("api://info")
+@mcp.resource("api://info")
 def get_api_info() -> str:
     """
     Get API information
@@ -1493,7 +1511,7 @@ def get_api_info() -> str:
     """
 
 
-@app.resource("schema://Order")
+@mcp.resource("schema://Order")
 def get_Order_schema() -> str:
     """
     Get the Order schema definition
@@ -1503,7 +1521,7 @@ def get_Order_schema() -> str:
     """
 
 
-@app.resource("schema://User")
+@mcp.resource("schema://User")
 def get_User_schema() -> str:
     """
     Get the User schema definition
@@ -1513,7 +1531,7 @@ def get_User_schema() -> str:
     """
 
 
-@app.resource("schema://NewProduct")
+@mcp.resource("schema://NewProduct")
 def get_NewProduct_schema() -> str:
     """
     Get the NewProduct schema definition
@@ -1523,7 +1541,7 @@ def get_NewProduct_schema() -> str:
     """
 
 
-@app.resource("schema://Products")
+@mcp.resource("schema://Products")
 def get_Products_schema() -> str:
     """
     Get the Products schema definition
@@ -1533,7 +1551,7 @@ def get_Products_schema() -> str:
     """
 
 
-@app.resource("schema://Product")
+@mcp.resource("schema://Product")
 def get_Product_schema() -> str:
     """
     Get the Product schema definition
@@ -1543,7 +1561,7 @@ def get_Product_schema() -> str:
     """
 
 
-@app.resource("schema://OrderStatusEnum")
+@mcp.resource("schema://OrderStatusEnum")
 def get_OrderStatusEnum_schema() -> str:
     """
     Get the OrderStatusEnum schema definition
@@ -1553,7 +1571,7 @@ def get_OrderStatusEnum_schema() -> str:
     """
 
 
-@app.resource("schema://ProductQuantity")
+@mcp.resource("schema://ProductQuantity")
 def get_ProductQuantity_schema() -> str:
     """
     Get the ProductQuantity schema definition
@@ -1563,7 +1581,7 @@ def get_ProductQuantity_schema() -> str:
     """
 
 
-@app.resource("schema://Post")
+@mcp.resource("schema://Post")
 def get_Post_schema() -> str:
     """
     Get the Post schema definition
@@ -1573,7 +1591,7 @@ def get_Post_schema() -> str:
     """
 
 
-@app.resource("schema://Author")
+@mcp.resource("schema://Author")
 def get_Author_schema() -> str:
     """
     Get the Author schema definition
@@ -1583,7 +1601,7 @@ def get_Author_schema() -> str:
     """
 
 
-@app.resource("schema://VideoForm")
+@mcp.resource("schema://VideoForm")
 def get_VideoForm_schema() -> str:
     """
     Get the VideoForm schema definition
@@ -1593,7 +1611,7 @@ def get_VideoForm_schema() -> str:
     """
 
 
-@app.resource("schema://CRAPIResponse")
+@mcp.resource("schema://CRAPIResponse")
 def get_CRAPIResponse_schema() -> str:
     """
     Get the CRAPIResponse schema definition
@@ -1603,7 +1621,7 @@ def get_CRAPIResponse_schema() -> str:
     """
 
 
-@app.resource("schema://OtpForm")
+@mcp.resource("schema://OtpForm")
 def get_OtpForm_schema() -> str:
     """
     Get the OtpForm schema definition
@@ -1613,7 +1631,7 @@ def get_OtpForm_schema() -> str:
     """
 
 
-@app.resource("schema://JwtResponse")
+@mcp.resource("schema://JwtResponse")
 def get_JwtResponse_schema() -> str:
     """
     Get the JwtResponse schema definition
@@ -1623,7 +1641,7 @@ def get_JwtResponse_schema() -> str:
     """
 
 
-@app.resource("schema://LoginWithEmailToken")
+@mcp.resource("schema://LoginWithEmailToken")
 def get_LoginWithEmailToken_schema() -> str:
     """
     Get the LoginWithEmailToken schema definition
@@ -1633,7 +1651,7 @@ def get_LoginWithEmailToken_schema() -> str:
     """
 
 
-@app.resource("schema://ProfileVideo")
+@mcp.resource("schema://ProfileVideo")
 def get_ProfileVideo_schema() -> str:
     """
     Get the ProfileVideo schema definition
@@ -1643,7 +1661,7 @@ def get_ProfileVideo_schema() -> str:
     """
 
 
-@app.resource("schema://ApplyCouponRequest")
+@mcp.resource("schema://ApplyCouponRequest")
 def get_ApplyCouponRequest_schema() -> str:
     """
     Get the ApplyCouponRequest schema definition
@@ -1653,7 +1671,7 @@ def get_ApplyCouponRequest_schema() -> str:
     """
 
 
-@app.resource("schema://ApplyCouponResponse")
+@mcp.resource("schema://ApplyCouponResponse")
 def get_ApplyCouponResponse_schema() -> str:
     """
     Get the ApplyCouponResponse schema definition
@@ -1663,7 +1681,7 @@ def get_ApplyCouponResponse_schema() -> str:
     """
 
 
-@app.resource("schema://AddCouponRequest")
+@mcp.resource("schema://AddCouponRequest")
 def get_AddCouponRequest_schema() -> str:
     """
     Get the AddCouponRequest schema definition
@@ -1673,7 +1691,7 @@ def get_AddCouponRequest_schema() -> str:
     """
 
 
-@app.resource("schema://AddCouponResponse")
+@mcp.resource("schema://AddCouponResponse")
 def get_AddCouponResponse_schema() -> str:
     """
     Get the AddCouponResponse schema definition
@@ -1683,7 +1701,7 @@ def get_AddCouponResponse_schema() -> str:
     """
 
 
-@app.resource("schema://ValidateCouponRequest")
+@mcp.resource("schema://ValidateCouponRequest")
 def get_ValidateCouponRequest_schema() -> str:
     """
     Get the ValidateCouponRequest schema definition
@@ -1693,7 +1711,7 @@ def get_ValidateCouponRequest_schema() -> str:
     """
 
 
-@app.resource("schema://ValidateCouponResponse")
+@mcp.resource("schema://ValidateCouponResponse")
 def get_ValidateCouponResponse_schema() -> str:
     """
     Get the ValidateCouponResponse schema definition
@@ -1703,7 +1721,7 @@ def get_ValidateCouponResponse_schema() -> str:
     """
 
 
-@app.resource("schema://ServiceRequests")
+@mcp.resource("schema://ServiceRequests")
 def get_ServiceRequests_schema() -> str:
     """
     Get the ServiceRequests schema definition
@@ -1725,9 +1743,12 @@ def parse_args():
     return parser.parse_args()
 
 
+async def main():
+    # Use run_async() in async contexts
+    await mcp.run_streamable_http_async()
+
+
 if __name__ == "__main__":
     args = parse_args()
     logger.info(f"Starting MCP server with {args.transport} transport")
-    app.settings.host = "0.0.0.0"
-    app.settings.port = 5002
-    app.run(transport=args.transport)
+    asyncio.run(main())

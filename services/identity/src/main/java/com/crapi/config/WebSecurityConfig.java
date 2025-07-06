@@ -84,7 +84,7 @@ public class WebSecurityConfig {
                     .permitAll()
                     .requestMatchers("/identity/api/v2/user/dashboard")
                     .permitAll()
-                    .requestMatchers("/identity/management/**")
+                    .requestMatchers("/identity/management/admin/**")
                     .hasRole("ADMIN")
                     .anyRequest()
                     .authenticated())

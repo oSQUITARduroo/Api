@@ -17,6 +17,7 @@
 DIR="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 
 echo "Starting Flask server"
+python -m mcpserver.server &
 if [ "$TLS_ENABLED" = "true" ] || [ "$TLS_ENABLED" = "1" ]; then
   echo "TLS is ENABLED"
   # if $TLS_CERTIFICATE and $TLS_KEY are not set, use the default ones
@@ -28,7 +29,7 @@ if [ "$TLS_ENABLED" = "true" ] || [ "$TLS_ENABLED" = "1" ]; then
   fi
   echo "TLS_CERTIFICATE: $TLS_CERTIFICATE"
   echo "TLS_KEY: $TLS_KEY"
-  uvicorn chatbot:app --timeout 600 --host 0.0.0.0 --port ${SERVER_PORT} --ssl-certfile $TLS_CERTIFICATE --ssl-keyfile $TLS_KEY --log-level=debug
+  uvicorn chatbot.app:app --timeout-keep-alive 600 --host 0.0.0.0 --port ${SERVER_PORT} --ssl-certfile $TLS_CERTIFICATE --ssl-keyfile $TLS_KEY --log-level=debug
 else
-  uvicorn chatbot:app --timeout 600 --host 0.0.0.0 --port ${SERVER_PORT} --log-level=debug
+  uvicorn chatbot.app:app --timeout-keep-alive 600 --host 0.0.0.0 --port ${SERVER_PORT} --log-level=debug
 fi

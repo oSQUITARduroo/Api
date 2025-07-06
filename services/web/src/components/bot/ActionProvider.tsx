@@ -14,21 +14,25 @@
  */
 
 import { APIService } from "../../constants/APIConstant";
+import { v4 as uuidv4 } from "uuid";
 // import { isAccessTokenValid } from "../../utils";
 import superagent from "superagent";
+import { ChatMessage } from "./MessageParser";
 
-interface ChatBotMessage {
-  id: string;
+
+export interface ChatBotMessage {
   message: string;
+  role: string;
+  id: number;
   loading?: boolean;
   terminateLoading?: boolean;
 }
 
 interface State {
-  messages: ChatBotMessage[];
   openapiKey: string | null;
   initializing: boolean;
   initializationRequired: boolean;
+  messages: ChatBotMessage[];
 }
 
 type SetStateFunc = (stateUpdater: (state: State) => State) => void;
@@ -36,6 +40,7 @@ type SetStateFunc = (stateUpdater: (state: State) => State) => void;
 class ActionProvider {
   private createChatBotMessage: (
     message: string,
+    id: number,
     options?: Partial<ChatBotMessage>,
   ) => ChatBotMessage;
   private setState: SetStateFunc;
@@ -44,6 +49,7 @@ class ActionProvider {
   constructor(
     createChatBotMessage: (
       message: string,
+      id: number,
       options?: Partial<ChatBotMessage>,
     ) => ChatBotMessage,
     setStateFunc: SetStateFunc,
@@ -57,9 +63,11 @@ class ActionProvider {
   handleNotInitialized = (): void => {
     const message = this.createChatBotMessage(
       "To initialize the chatbot, please type init and press enter.",
+      Math.floor(Math.random() * 65536),
       {
         loading: true,
         terminateLoading: true,
+        role: "assistant",
       },
     );
     this.addMessageToState(message);
@@ -72,16 +80,19 @@ class ActionProvider {
       this.addInitializingToState();
       const message = this.createChatBotMessage(
         "Please type your OpenAI API key and press enter.",
+        Math.floor(Math.random() * 65536),
         {
           loading: true,
           terminateLoading: true,
+          role: "assistant",
         },
       );
       this.addMessageToState(message);
     } else {
-      const message = this.createChatBotMessage("Bot already initialized", {
+      const message = this.createChatBotMessage("Bot already initialized", Math.floor(Math.random() * 65536), {
         loading: true,
         terminateLoading: true,
+        role: "assistant",
       });
       this.addMessageToState(message);
     }
@@ -91,9 +102,11 @@ class ActionProvider {
     if (!apiKey) {
       const message = this.createChatBotMessage(
         "Please enter a valid OpenAI API key.",
+        Math.floor(Math.random() * 65536),
         {
           loading: true,
           terminateLoading: true,
+          role: "assistant",
         },
       );
       this.addMessageToState(message);
@@ -113,9 +126,11 @@ class ActionProvider {
           console.log(err);
           const errormessage = this.createChatBotMessage(
             "Failed to initialize chatbot. Please reverify the OpenAI API key.",
+            Math.floor(Math.random() * 65536),
             {
               loading: true,
               terminateLoading: true,
+              role: "assistant",
             },
           );
           this.addMessageToState(errormessage);
@@ -124,9 +139,11 @@ class ActionProvider {
         console.log(res);
         const successmessage = this.createChatBotMessage(
           "Chatbot initialized successfully.",
+          Math.floor(Math.random() * 65536),
           {
             loading: true,
             terminateLoading: true,
+            role: "assistant",
           },
         );
         this.addMessageToState(successmessage);
@@ -136,29 +153,34 @@ class ActionProvider {
 
   handleChat = (message: string, accessToken: string): void => {
     const chatUrl = APIService.CHATBOT_SERVICE + "genai/ask";
+    console.log("Chat message:", message);
     superagent
       .post(chatUrl)
-      .send({ question: message })
+      .send({ message: message })
       .set("Accept", "application/json")
       .set("Content-Type", "application/json")
       .set("Authorization", `Bearer ${accessToken}`)
       .end((err, res) => {
+        console.log("Chat response:", res);
         if (err) {
           console.log(err);
           const errormessage = this.createChatBotMessage(
             "Failed to get response from chatbot. Please reverify the OpenAI API key.",
+            Math.floor(Math.random() * 65536),
             {
               loading: true,
               terminateLoading: true,
+              role: "assistant",
             },
           );
           this.addMessageToState(errormessage);
           return;
         }
         console.log(res);
-        const successmessage = this.createChatBotMessage(res.body.answer, {
+        const successmessage = this.createChatBotMessage(res.body.message, Math.floor(Math.random() * 65536), {
           loading: true,
           terminateLoading: true,
+          role: "assistant",
         });
         this.addMessageToState(successmessage);
       });
@@ -169,18 +191,22 @@ class ActionProvider {
     if (initRequired) {
       const message = this.createChatBotMessage(
         "To initialize the chatbot, please type init and press enter. To clear the chat context, type clear or reset and press enter.",
+        Math.floor(Math.random() * 65536),
         {
           loading: true,
           terminateLoading: true,
+          role: "assistant",
         },
       );
       this.addMessageToState(message);
     } else {
       const message = this.createChatBotMessage(
         "Chat with the bot and exploit it.",
+        Math.floor(Math.random() * 65536),
         {
           loading: true,
           terminateLoading: true,
+          role: "assistant",
         },
       );
       this.addMessageToState(message);
@@ -201,9 +227,11 @@ class ActionProvider {
           console.log(err);
           const errormessage = this.createChatBotMessage(
             "Failed to clear chat context.",
+            Math.floor(Math.random() * 65536),
             {
               loading: true,
               terminateLoading: true,
+              role: "assistant",
             },
           );
           this.addMessageToState(errormessage);
@@ -212,9 +240,11 @@ class ActionProvider {
         console.log(res);
         const successmessage = this.createChatBotMessage(
           "Chat context has been cleared.",
+          Math.floor(Math.random() * 65536),
           {
             loading: true,
             terminateLoading: true,
+            role: "assistant",
           },
         );
         this.addMessageToState(successmessage);
@@ -225,7 +255,7 @@ class ActionProvider {
   addMessageToState = (message: ChatBotMessage): void => {
     this.setState((state) => ({
       ...state,
-      messages: [...state.messages, message],
+      messages: [...(state.messages || []), message], // ensure UI is updated
     }));
   };
 
@@ -257,6 +287,15 @@ class ActionProvider {
       messages: [],
     }));
   };
+
+  addChatHistoryToState = (chatHistory: ChatBotMessage[]): void => {
+    // Only append valid ChatBotMessage objects to messages
+    this.setState((state) => ({
+      ...state,
+      messages: [...(state.messages || []), ...chatHistory],
+    }));
+  };
+
 }
 
 export default ActionProvider;
