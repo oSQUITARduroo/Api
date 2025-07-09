@@ -40,6 +40,7 @@ API_AUTH_TYPE = "ApiKey"
 
 
 async def get_api_key():
+    global API_KEY
     if API_KEY is None:
         login_body = {"username": API_USER, "password": API_PASSWORD}
         apikey_url = f"{API_URL}/identity/management/user/apikey"
