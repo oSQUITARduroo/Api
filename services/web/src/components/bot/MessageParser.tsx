@@ -34,7 +34,11 @@ interface ActionProvider {
   handleHelp: (initRequired: boolean) => void;
   handleInitialize: (initRequired: boolean) => void;
   handleResetContext: (accessToken: string) => void;
-  handleInitialized: (message: string, accessToken: string, chatHistory: ChatMessage[]) => void;
+  handleInitialized: (
+    message: string,
+    accessToken: string,
+    chatHistory: ChatMessage[],
+  ) => void;
   handleNotInitialized: () => void;
   handleChat: (message: string, accessToken: string) => void;
 }
@@ -74,7 +78,7 @@ class MessageParser {
       .catch((err) => {
         console.log("Error prefetch: ", err);
       });
-    
+
     console.log("Initialization required:", initRequired);
     return [initRequired, chatHistory];
   }
@@ -113,7 +117,7 @@ class MessageParser {
       return this.actionProvider.handleInitialized(
         message,
         this.state.accessToken,
-        this.state.chatHistory
+        this.state.chatHistory,
       );
     } else if (this.state.initializationRequired) {
       return this.actionProvider.handleNotInitialized();

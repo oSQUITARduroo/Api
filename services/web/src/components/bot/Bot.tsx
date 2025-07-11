@@ -18,7 +18,7 @@ import React, { useState, useEffect } from "react";
 import config from "./config";
 import { APIService } from "../../constants/APIConstant";
 import MessageParser, { ChatMessage } from "./MessageParser";
-import ActionProvider from "./ActionProvider"; 
+import ActionProvider from "./ActionProvider";
 import Chatbot, { createChatBotMessage } from "react-chatbot-kit";
 import { Row, Col } from "antd";
 import { Space } from "antd";
@@ -77,8 +77,6 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
     messages: [],
   });
 
-
-
   const headerText = (): JSX.Element => {
     return (
       <div
@@ -134,7 +132,7 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
                 chatHistory = res.body?.chat_history;
                 setChatbotState((prev) => ({
                   ...prev,
-                  messages: chatHistory.map(msg => ({
+                  messages: chatHistory.map((msg) => ({
                     role: msg.role,
                     content: msg.content,
                     id: msg.id,
@@ -171,13 +169,13 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
       ),
       customButtons: (
         <button
-              className="expand-chatbot-btn"
-              style={{ position: "absolute", top: 10, right: 10, zIndex: 1100 }}
-              onClick={() => setExpanded((prev) => !prev)}
-              aria-label={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
-            >
-              ⤢   
-            </button>
+          className="expand-chatbot-btn"
+          style={{ position: "absolute", top: 10, right: 10, zIndex: 1100 }}
+          onClick={() => setExpanded((prev) => !prev)}
+          aria-label={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
+        >
+          ⤢
+        </button>
       ),
     },
     state: chatbotState,
@@ -185,10 +183,10 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
 
   // Convert ChatMessage[] to IMessage[] for UI
   const chatMessagesToIMessages = (messages: ChatMessage[]): IMessage[] =>
-    messages.map(msg => ({
+    messages.map((msg) => ({
       id: msg.id,
       message: msg.content,
-      type: msg.role === "assistant" ? "bot" : "user"
+      type: msg.role === "assistant" ? "bot" : "user",
     }));
 
   // Dynamic initialMessages state
@@ -199,15 +197,13 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
       const history = await fetchChatHistoryFromBackend(); // returns ChatMessage[]
       setInitialMessages(
         history.length > 0
-          ? history.map(msg =>
-              createChatBotMessage(msg.content, {})
-            )
+          ? history.map((msg) => createChatBotMessage(msg.content, {}))
           : [
               createChatBotMessage(
                 `Hi, Welcome to crAPI! I'm CrapBot, and I'm here to be exploited.`,
-                {}
+                {},
               ),
-            ]
+            ],
       );
     }
     fetchHistory();
@@ -224,7 +220,7 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
     message: string;
     type: string; // required
   }
-  
+
   // Remount Chatbot only on clear, reset, or init
   const [chatbotInstanceKey, setChatbotInstanceKey] = useState(0);
 
@@ -263,7 +259,7 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
   // Save messages to backend and re-fetch
   const saveMessages = (messages: IMessage[]): void => {
     // Update UI state immediately (optimistic UI)
-    setChatbotState(prev => ({
+    setChatbotState((prev) => ({
       ...prev,
       messages: iMessageToChatHistory(messages),
     }));
@@ -294,7 +290,7 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
 
   // Convert IMessage[] (UI) to ChatMessage[] (backend)
   const iMessageToChatHistory = (messages: IMessage[]): ChatMessage[] =>
-    messages.map(msg => ({
+    messages.map((msg) => ({
       role: msg.type === "bot" ? "assistant" : "user",
       content: msg.message,
       id: msg.id,
@@ -314,11 +310,11 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
         .set("Authorization", `Bearer ${props.accessToken}`)
         .send({ chat_history: [] });
       const latestHistory = await fetchChatHistoryFromBackend();
-      setChatbotState(prev => ({
+      setChatbotState((prev) => ({
         ...prev,
         messages: latestHistory,
       }));
-      setChatbotInstanceKey(prev => prev + 1);
+      setChatbotInstanceKey((prev) => prev + 1);
     } catch (err) {
       console.error("Failed to clear chat history on backend", err);
     }
@@ -333,21 +329,20 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
         .set("Authorization", `Bearer ${props.accessToken}`)
         .send({ chat_history: [] });
       const latestHistory = await fetchChatHistoryFromBackend();
-      setChatbotState(prev => ({
+      setChatbotState((prev) => ({
         ...prev,
         messages: latestHistory,
       }));
-      setChatbotInstanceKey(prev => prev + 1);
+      setChatbotInstanceKey((prev) => prev + 1);
     } catch (err) {
       console.error("Failed to reset chat history on backend", err);
     }
   };
 
-
   return (
     <Row>
       <Col xs={10}>
-        <div className={`app-chatbot-container${expanded ? ' expanded' : ''}`}>
+        <div className={`app-chatbot-container${expanded ? " expanded" : ""}`}>
           <div style={{ maxWidth: "100%", maxHeight: "100%" }}>
             {/* Chatbot loads chat history from backend and renders it on UI load */}
             {showBot && initialMessages === null && <div>Loading chat...</div>}

@@ -19,7 +19,6 @@ import { v4 as uuidv4 } from "uuid";
 import superagent from "superagent";
 import { ChatMessage } from "./MessageParser";
 
-
 export interface ChatBotMessage {
   message: string;
   role: string;
@@ -89,11 +88,15 @@ class ActionProvider {
       );
       this.addMessageToState(message);
     } else {
-      const message = this.createChatBotMessage("Bot already initialized", Math.floor(Math.random() * 65536), {
-        loading: true,
-        terminateLoading: true,
-        role: "assistant",
-      });
+      const message = this.createChatBotMessage(
+        "Bot already initialized",
+        Math.floor(Math.random() * 65536),
+        {
+          loading: true,
+          terminateLoading: true,
+          role: "assistant",
+        },
+      );
       this.addMessageToState(message);
     }
   };
@@ -177,11 +180,15 @@ class ActionProvider {
           return;
         }
         console.log(res);
-        const successmessage = this.createChatBotMessage(res.body.message, Math.floor(Math.random() * 65536), {
-          loading: true,
-          terminateLoading: true,
-          role: "assistant",
-        });
+        const successmessage = this.createChatBotMessage(
+          res.body.message,
+          Math.floor(Math.random() * 65536),
+          {
+            loading: true,
+            terminateLoading: true,
+            role: "assistant",
+          },
+        );
         this.addMessageToState(successmessage);
       });
   };
@@ -295,7 +302,6 @@ class ActionProvider {
       messages: [...(state.messages || []), ...chatHistory],
     }));
   };
-
 }
 
 export default ActionProvider;
