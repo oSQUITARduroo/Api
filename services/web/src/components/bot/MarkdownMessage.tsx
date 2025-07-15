@@ -9,18 +9,15 @@ import Icon, {
 } from "@ant-design/icons";
 
 const MarkdownMessage = (props: any) => {
-  console.log("MarkdownMessage props:", props)
-  const loader = props?.loader;
   const message = props?.message;
   return (
     // Add avatar for bot
     <div className="chat-message">
       <div className="react-chatbot-kit-chat-bot-message ">
         <span>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message}</ReactMarkdown>
         </span>
-        <div className="react-chatbot-kit-chat-bot-message-arrow">
-        </div>
+        <div className="react-chatbot-kit-chat-bot-message-arrow"></div>
       </div>
     </div>
   );
