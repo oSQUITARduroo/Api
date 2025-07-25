@@ -1,7 +1,6 @@
 from uuid import uuid4
-import os
 from langgraph.graph.message import Messages
-from .vector_index import build_vector_index_from_chat_history, update_vector_index, retrieval_index_path
+from .vector_index import update_vector_index
 from .extensions import db
 from .langgraph_agent import execute_langgraph_agent
 
@@ -39,8 +38,8 @@ async def process_user_message(session_id, user_message, api_key, model_name, us
     # Limit chat history to last 20 messages
     history = history[-20:]
     await update_chat_history(session_id, history)
-    if not os.path.exists(retrieval_index_path):
-        await build_vector_index_from_chat_history(api_key)
-    else:
-        await update_vector_index(api_key, session_id, {"user": user_message, "assistant": reply.content})
+    # if not os.path.exists(retrieval_index_path):
+    #     await build_vector_index_from_chat_history(api_key)
+    # else:
+    await update_vector_index(api_key, session_id, {"user": user_message, "assistant": reply.content})
     return reply.content, response_message_id

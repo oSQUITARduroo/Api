@@ -1,8 +1,9 @@
 import os
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from langchain.prompts import PromptTemplate
 from chatbot.extensions import db
+from chatbot.config import Config
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 
@@ -31,11 +32,10 @@ async def get_chat_history_retriever(api_key: str):
         If the user asks a specific question, extract and answer it from the chats.
         Be detailed, accurate, and neutral."""
     )
-    embeddings = OpenAIEmbeddings(api_key=api_key)
-    vectorstore = FAISS.load_local(
-        retrieval_index_path,
-        embeddings,
-        allow_dangerous_deserialization=True
+    embeddings = OpenAIEmbeddings(api_key=api_key, model="text-embedding-3-large")
+    vectorstore = Chroma(
+        embedding_function=embeddings,
+        persist_directory=Config.CHROMA_PERSIST_DIRECTORY
     )
     retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
     qa_chain = RetrievalQA.from_chain_type(
