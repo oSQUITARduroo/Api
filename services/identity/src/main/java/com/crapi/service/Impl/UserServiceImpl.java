@@ -469,19 +469,17 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public ApiKeyResponse generateApiKey(HttpServletRequest request, LoginForm loginForm) {
-    // if user is unauthenticated, use loginForm else user token to authenticate
+    Authentication authentication =
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(loginForm.getEmail(), loginForm.getPassword()));
+    if (authentication == null) {
+      return new ApiKeyResponse(null, UserMessage.INVALID_CREDENTIALS);
+    }
+    log.info("Generate Api Key for user: {}", loginForm.getEmail());
     User user;
     if (request == null || jwtAuthTokenFilter.getToken(request) == null) {
       user = userRepository.findByEmail(loginForm.getEmail());
     } else {
-      log.info("Generate Api Key for user: {}", loginForm.getEmail());
-      Authentication authentication =
-          authenticationManager.authenticate(
-              new UsernamePasswordAuthenticationToken(
-                  loginForm.getEmail(), loginForm.getPassword()));
-      if (authentication == null) {
-        return new ApiKeyResponse(null, UserMessage.INVALID_CREDENTIALS);
-      }
       user = getUserFromToken(request);
     }
     if (user == null) {
@@ -493,12 +491,45 @@ public class UserServiceImpl implements UserService {
       log.debug("Api Key already generated for user: {}", user.getEmail());
       return new ApiKeyResponse(user.getApiKey());
     }
-    log.info("Generate Api Key for user in token: {}", user.getEmail());
     String apiKey = ApiKeyGenerator.generateRandom(512);
-    log.debug("Api Key for user in token {}: {}", user.getEmail(), apiKey);
+    log.debug("Api Key for user {}: {}", user.getEmail(), apiKey);
     user.setApiKey(apiKey);
     userRepository.save(user);
     return new ApiKeyResponse(user.getApiKey(), UserMessage.API_KEY_GENERATED_MESSAGE);
+  }
+
+  /**
+   * @param request None
+   * @param loginForm LoginForm with user email and password
+   * @return JwtResponse with generated JWT token
+   */
+  @Override
+  @Transactional
+  public JwtResponse generateJwtToken(HttpServletRequest request, LoginForm loginForm) {
+    Authentication authentication =
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(loginForm.getEmail(), loginForm.getPassword()));
+    if (authentication == null) {
+      return new JwtResponse(null, UserMessage.INVALID_CREDENTIALS);
+    }
+    log.info("Generate JWT token for user: {}", loginForm.getEmail());
+    User user;
+    if (request == null || jwtAuthTokenFilter.getToken(request) == null) {
+      user = userRepository.findByEmail(loginForm.getEmail());
+    } else {
+      user = getUserFromToken(request);
+    }
+    if (user == null) {
+      log.debug("User not found to generate JWT token");
+      return new JwtResponse(null, UserMessage.INVALID_CREDENTIALS);
+    }
+    String jwt = jwtProvider.generateJwtToken(user);
+    log.debug("JWT token for user {}: {}", user.getEmail(), jwt);
+    if (jwt != null) {
+      return new JwtResponse(jwt, UserMessage.JWT_TOKEN_GENERATED_MESSAGE);
+    } else {
+      return new JwtResponse(null, UserMessage.JWT_TOKEN_GENERATION_FAILED);
+    }
   }
 
   /**
