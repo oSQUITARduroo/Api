@@ -23,9 +23,6 @@ public class UserMessage {
       "Api Key generated successfully. Use it in authorization header with ApiKey prefix.";
   public static final String API_KEY_GENERATION_FAILED =
       "Api Key generation failed! Only permitted for admin users.";
-  public static final String JWT_TOKEN_GENERATED_MESSAGE =
-      "JWT Token generated successfully. Use it in authorization header with Bearer prefix.";
-  public static final String JWT_TOKEN_GENERATION_FAILED = "JWT Token generation failed!";
   public static final String ACCOUNT_LOCK_MESSAGE = "User account has been locked.";
   public static final String ACCOUNT_LOCKED_MESSAGE =
       "User account is locked. Retry login with MFA to unlock.";

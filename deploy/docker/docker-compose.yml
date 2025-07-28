@@ -48,6 +48,7 @@ services:
       - TLS_KEYSTORE_PASSWORD=passw0rd
       - TLS_KEY_PASSWORD=passw0rd
       - TLS_KEY_ALIAS=identity
+      - ADMIN_EMAILS=admin@example.com
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -170,7 +171,7 @@ services:
       - MONGO_DB_NAME=crapi
       - API_USER=admin@example.com
       - API_PASSWORD=Admin!123
-      - API_AUTH_TYPE=jwt
+      - OPENAPI_SPEC=/app/resources/crapi-openapi-spec.json
       - DEFAULT_MODEL=gpt-4o-mini
       - CHROMA_PERSIST_DIRECTORY=/app/vectorstore
       # - CHATBOT_OPENAI_API_KEY=

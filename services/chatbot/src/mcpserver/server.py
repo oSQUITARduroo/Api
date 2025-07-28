@@ -18,21 +18,17 @@ logger.setLevel(logging.DEBUG)
 
 BASE_URL = f"{'https' if Config.TLS_ENABLED else 'http'}://{Config.WEB_SERVICE}"
 BASE_IDENTITY_URL = f"{'https' if Config.TLS_ENABLED else 'http'}://{Config.IDENTITY_SERVICE}"
-AUTH_TYPE_MAPPING = {
-    "apikey": "apiKey",
-    "jwt": "token"
-}
-CLIENT_AUTH = None
+API_KEY = None
 
-def get_client_auth():
-    global CLIENT_AUTH
+def get_api_key():
+    global API_KEY
     # Try 5 times to get client auth
     MAX_ATTEMPTS = 5
     for i in range(MAX_ATTEMPTS):
-        logger.info(f"Attempt {i+1} to get client auth...")
-        if CLIENT_AUTH is None:
+        logger.info(f"Attempt {i+1} to get API key...")
+        if API_KEY is None:
             login_body = {"email": Config.API_USER, "password": Config.API_PASSWORD}
-            auth_url = f"{BASE_IDENTITY_URL}/identity/management/user/{Config.API_AUTH_TYPE}"
+            auth_url = f"{BASE_IDENTITY_URL}/identity/management/user/apikey"
             headers = {
                 "Content-Type": "application/json",
             }
@@ -43,22 +39,22 @@ def get_client_auth():
                 response = client.post(auth_url, json=login_body)
                 if response.status_code != 200:
                     if i == MAX_ATTEMPTS - 1:
-                        logger.error(f"Failed to get client auth after {i+1} attempts: {response.status_code} {response.text}")
-                        raise Exception(f"Failed to get client auth after {i+1} attempts: {response.status_code} {response.text}")
-                    logger.error(f"Failed to get client auth in attempt {i+1}: {response.status_code} {response.text}. Sleeping for {i} seconds...")
+                        logger.error(f"Failed to get API key after {i+1} attempts: {response.status_code} {response.text}")
+                        raise Exception(f"Failed to get API key after {i+1} attempts: {response.status_code} {response.text}")
+                    logger.error(f"Failed to get API key in attempt {i+1}: {response.status_code} {response.text}. Sleeping for {i} seconds...")
                     time.sleep(i)
                 response_json = response.json()
                 logger.info(f"Response: {response_json}")
-                CLIENT_AUTH = f"{response_json.get('type')} {response_json.get(AUTH_TYPE_MAPPING[Config.API_AUTH_TYPE])}"
-                logger.info(f"MCP Server API Auth: {CLIENT_AUTH}")
-                return CLIENT_AUTH
-    return CLIENT_AUTH
+                API_KEY = response_json.get("apiKey")
+                logger.info(f"MCP Server API Key: {API_KEY}")
+                return API_KEY
+    return API_KEY
 
 # Async HTTP client for API calls
 def get_http_client():
     """Create and configure the HTTP client with appropriate authentication."""
     headers = {
-        "Authorization": get_client_auth(),
+        "Authorization": "ApiKey " + get_api_key(),
     }
     return httpx.AsyncClient(
         base_url=BASE_URL,
@@ -66,7 +62,7 @@ def get_http_client():
     )
 
 # Load your OpenAPI spec 
-with open("/app/resources/crapi-openapi-spec.json", "r") as f:
+with open(Config.OPENAPI_SPEC, "r") as f:
     openapi_spec = json.load(f)
 
 # Create the MCP server

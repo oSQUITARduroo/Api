@@ -77,6 +77,7 @@ identity:
     keyStorePassword: passw0rd
     keyPassword: passw0rd
     keyAlias: identity
+    adminEmails: admin@example.com
   deploymentLabels:
     app: crapi-identity
   podLabels:
@@ -155,7 +156,7 @@ chatbot:
     chromaPersistDirectory: /app/vectorstore
     apiUser: admin@example.com
     apiPassword: Admin!123
-    apiAuthType: jwt
+    openapiSpec: /app/resources/crapi-openapi-spec.json
   storage:
     # type: "manual"
     # pv:

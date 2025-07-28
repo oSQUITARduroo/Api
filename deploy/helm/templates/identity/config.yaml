@@ -37,3 +37,4 @@ data:
   TLS_KEYSTORE_PASSWORD: {{ .Values.identity.config.keyStorePassword }}
   TLS_KEY_PASSWORD: {{ .Values.identity.config.keyPassword }}
   TLS_KEY_ALIAS: {{ .Values.identity.config.keyAlias }}
+  ADMIN_EMAILS: {{ .Values.identity.config.adminEmails | quote }}

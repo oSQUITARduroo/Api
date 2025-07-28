@@ -60,12 +60,4 @@ public class ManagementControlller {
     ApiKeyResponse response = userService.generateApiKey(request, loginForm);
     return ResponseEntity.status(HttpStatus.OK).body(response);
   }
-
-  @PostMapping("/user/jwt")
-  public ResponseEntity<JwtResponse> generateJwt(
-      @RequestBody LoginForm loginForm, HttpServletRequest request)
-      throws UnsupportedEncodingException {
-    JwtResponse response = userService.generateJwtToken(request, loginForm);
-    return ResponseEntity.status(HttpStatus.OK).body(response);
-  }
 }

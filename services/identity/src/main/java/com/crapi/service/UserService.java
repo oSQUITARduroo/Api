@@ -57,6 +57,4 @@ public interface UserService {
   CRAPIResponse lockAccount(HttpServletRequest request, LockAccountForm lockAccountForm);
 
   ApiKeyResponse generateApiKey(HttpServletRequest request, LoginForm loginForm);
-
-  JwtResponse generateJwtToken(HttpServletRequest request, LoginForm loginForm);
 }
