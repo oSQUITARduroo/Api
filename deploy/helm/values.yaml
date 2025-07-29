@@ -77,7 +77,6 @@ identity:
     keyStorePassword: passw0rd
     keyPassword: passw0rd
     keyAlias: identity
-    adminEmails: admin@example.com
   deploymentLabels:
     app: crapi-identity
   podLabels:

@@ -66,7 +66,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserServiceImplTest {
@@ -158,7 +157,6 @@ public class UserServiceImplTest {
     Mockito.when(authenticationManager.authenticate(Mockito.any(Authentication.class)))
         .thenReturn(mockAuth);
     Mockito.when(userRepository.findByEmail(Mockito.anyString())).thenReturn(user);
-    ReflectionTestUtils.setField(userService, "adminEmails", user.getEmail());
     ApiKeyResponse jwtResponse = userService.generateApiKey(getMockHttpRequest(), loginForm);
     Assertions.assertEquals(jwtResponse.getApiKey(), "sampleApiKey");
   }

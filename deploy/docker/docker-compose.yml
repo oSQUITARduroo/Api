@@ -48,7 +48,6 @@ services:
       - TLS_KEYSTORE_PASSWORD=passw0rd
       - TLS_KEY_PASSWORD=passw0rd
       - TLS_KEY_ALIAS=identity
-      - ADMIN_EMAILS=admin@example.com
     depends_on:
       postgresdb:
         condition: service_healthy

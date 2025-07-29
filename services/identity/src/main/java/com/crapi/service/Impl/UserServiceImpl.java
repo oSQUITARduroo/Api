@@ -33,13 +33,10 @@ import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.impl.Log4jContextFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -75,9 +72,6 @@ public class UserServiceImpl implements UserService {
   @Autowired AuthenticationManager authenticationManager;
 
   @Autowired ChangePhoneRepository changePhoneRepository;
-
-  @Value("${app.admin.emails}")
-  private String adminEmails;
 
   public UserServiceImpl() {
     setFactory(log4jContextFactory);
@@ -490,11 +484,6 @@ public class UserServiceImpl implements UserService {
     if (user == null) {
       log.debug("User not found to generate API key");
       return new ApiKeyResponse(null, UserMessage.INVALID_CREDENTIALS);
-    }
-    List<String> adminEmailList = Arrays.asList(adminEmails.split(","));
-    if (!adminEmailList.contains(user.getEmail())) {
-      log.debug("User {} is not authorized to generate API Key", user.getEmail());
-      return new ApiKeyResponse(null, UserMessage.API_KEY_GENERATION_FAILED);
     }
     // if apiKey is already generated
     if (user.getApiKey() != null) {
