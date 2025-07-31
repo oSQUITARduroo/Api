@@ -8,32 +8,37 @@
 
 
 .expand-chatbot-btn {
-  border: 1px solid #d1d5db;
+  border: none;
+  outline: none;
   position: absolute;
   right: 40px;
   top: 10px;
   margin-right: 5px;
   border-radius: 8px;
   padding: 8px 12px;
-  color: #d68181;
-  font-weight: 500;
-  color: #d68181;
+  color: rgb(232, 234, 237);
+  font-weight: 1000;
   width: 32px;
   height: 32px;
-  font-size: 14px;
+  font-size: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  background: transparent;
 }
 
 
 .expand-chatbot-btn:hover {
-  background: #e5e7eb;
-  border-color: #d1d5db;
-  color: #1f2937;
+  background: rgba(229, 231, 235, 0.5);
+  color: #ffffff;
   transform: scale(1.05);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.expand-chatbot-btn:focus {
+  outline: none;
+  border: none;
 }
 
 
@@ -78,4 +83,8 @@
 
 .rcb-bot-avatar {
   background: fixed;
+}
+
+.rcb-chat-footer-container {
+  display: none;
 }

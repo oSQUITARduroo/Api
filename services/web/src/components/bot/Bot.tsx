@@ -371,11 +371,9 @@ What would you like to do next?`);
             aria-label={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
             title={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #e5e7eb, #d1d5db)';
               e.currentTarget.style.transform = 'scale(1.05)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #f3f4f6, #e5e7eb)';
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
