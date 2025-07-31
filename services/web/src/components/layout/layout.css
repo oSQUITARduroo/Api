@@ -1,8 +1,9 @@
 .layout-content {
-  padding: var(--spacing-lg) var(--spacing-xxl);
+  padding: var(--spacing-sm) var(--spacing-sm);
   background: var(--bg-layout);
   min-height: calc(100vh - 56px);
   position: relative;
+  min-width: 50vw;
 }
 
 .layout-content::before {
