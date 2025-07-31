@@ -22,6 +22,7 @@ import {
   CloseSquareOutlined,
   ExpandAltOutlined,
   WechatWorkOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import "./chatbot.css";
 import chatbotIcon from "../../assets/chatbot.svg";
@@ -59,6 +60,7 @@ interface ChatBotComponentProps {
 
 const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
   const [expanded, setExpanded] = useState<boolean>(false);
+  const [chatResetKey, setChatResetKey] = useState<number>(0);
   const helpOptions = ["Initialize", "Clear", "Help"];
 
 
@@ -112,7 +114,7 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
   // Clear chat history
   const clearChatHistory = async () => {
     try {
-      const clearUrl = APIService.CHATBOT_SERVICE + "genai/clear";
+      const clearUrl = APIService.CHATBOT_SERVICE + "genai/reset";
       await superagent
         .post(clearUrl)
         .set("Accept", "application/json")
@@ -211,8 +213,6 @@ const ChatBotComponent: React.FC<ChatBotComponentProps> = (props) => {
                 await params.injectMessage(message.content, message.role === "user" ? "user" : "bot");
               }
               await params.injectMessage(`Loaded ${chatHistory.length} previous messages. You can now start chatting!`);
-            } else {
-              await params.injectMessage("No previous chat history found. You can start chatting now!");
             }
             
             return "chat";
@@ -289,7 +289,7 @@ What would you like to do next?`);
         const success = await handleInitialization(apiKey);
         
         if (success) {
-          await params.injectMessage("✅ Chatbot initialized successfully! Loading chat history...");
+          await params.injectMessage("✅ Chatbot initialized successfully!");
           
           // Fetch chat history after successful initialization
           const chatHistory = await fetchChatHistory();
@@ -365,20 +365,62 @@ What would you like to do next?`);
           <span style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>
             crAPI ChatBot
           </span>
-          <button
-            className="expand-chatbot-btn"
-            onClick={() => setExpanded((prev) => !prev)}
-            aria-label={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
-            title={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            <ExpandAltOutlined />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              className="delete-chat-btn"
+              onClick={async () => {
+                // throw a beautiful popup to confirm the action
+                const { confirm } = await import('antd').then(({ Modal }) => ({
+                  confirm: Modal.confirm,
+                }));
+                
+                confirm({
+                  title: 'Are you sure you want to clear the chat history from crAPI servers?',
+                  content: 'This action cannot be undone.',
+                  onOk: async () => {
+                    // Clear UI immediately by forcing re-render
+                    setChatResetKey(prev => prev + 1);
+                    
+                    // Clear local storage for chat history
+                    const storageKey = `react_chatbot_history_${chatbotState.initializationRequired ? 'pending' : 'active'}`;
+                    localStorage.removeItem(storageKey);
+                    
+                    // Also clear backend history
+                    const success = await clearChatHistory();
+                    if (!success) {
+                      // If backend clear failed, show error but keep UI cleared
+                      console.error('Failed to clear backend chat history');
+                    }
+                  },
+                  onCancel: () => {},
+                });
+              }}
+              aria-label="Clear Chat History"
+              title="Clear Chat History"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <DeleteOutlined />
+            </button>
+            <button
+              className="expand-chatbot-btn"
+              onClick={() => setExpanded((prev) => !prev)}
+              aria-label={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
+              title={expanded ? "Collapse Chatbot" : "Expand Chatbot"}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <ExpandAltOutlined />
+            </button>
+          </div>
         </div>
       ),
     },
@@ -408,6 +450,7 @@ What would you like to do next?`);
       <Col xs={10}>
         <div className={`app-chatbot-container${expanded ? " expanded" : ""}`}>
           <ChatBot
+              key={chatResetKey}
               flow={flow}
               plugins={plugins}
               settings={settings}

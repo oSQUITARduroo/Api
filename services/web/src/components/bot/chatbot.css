@@ -42,6 +42,45 @@
   border: none;
 }
 
+/* Delete chat button */
+.delete-chat-btn {
+  border: none;
+  outline: none;
+  position: absolute;
+  right: 80px;
+  top: 10px;
+  margin-right: 5px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: rgb(232, 234, 237);
+  font-weight: 1000;
+  width: 32px;
+  height: 32px;
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.delete-chat-btn:hover {
+  color: #ffffff;
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.delete-chat-btn:focus {
+  outline: none;
+  border: none;
+}
+
+.delete-chat-btn:active {
+  transform: scale(0.95);
+}
+
 
 .expand-chatbot-btn:after {
 	content: "";
