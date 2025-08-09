@@ -378,10 +378,10 @@ export function* getServiceReport(action: MyAction): Generator<any, void, any> {
     }
 
     const filename = `report_${reportId}.pdf`;
-    responseJSON.downloadUrl = 
-      APIService.WORKSHOP_SERVICE + 
-      requestURLS.DOWNLOAD_SERVICE_REPORT + 
-      "?filename=" + 
+    responseJSON.downloadUrl =
+      APIService.WORKSHOP_SERVICE +
+      requestURLS.DOWNLOAD_SERVICE_REPORT +
+      "?filename=" +
       filename;
     yield put({ type: actionTypes.FETCHED_DATA, payload: responseJSON });
     callback(responseTypes.SUCCESS, responseJSON);

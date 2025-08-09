@@ -14,14 +14,7 @@
  */
 
 import React from "react";
-import {
-  Card,
-  Descriptions,
-  Spin,
-  Layout,
-  Timeline,
-  Typography,
-} from "antd";
+import { Card, Descriptions, Spin, Layout, Timeline, Typography } from "antd";
 import { PageHeader } from "@ant-design/pro-components";
 import { Content } from "antd/es/layout/layout";
 import {
