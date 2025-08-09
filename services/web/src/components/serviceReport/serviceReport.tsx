@@ -16,8 +16,6 @@
 import React from "react";
 import {
   Card,
-  Row,
-  Col,
   Descriptions,
   Spin,
   Layout,
@@ -33,6 +31,7 @@ import {
   ToolOutlined,
   CommentOutlined,
   CalendarOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import "./styles.css";
 
@@ -65,6 +64,7 @@ interface Service {
     comment: string;
     created_on: string;
   }[];
+  downloadUrl?: string;
 }
 
 interface ServiceReportProps {
@@ -126,6 +126,18 @@ const ServiceReport: React.FC<ServiceReportProps> = ({ service }) => {
               </Text>
             </div>
           }
+          extra={[
+            <a
+              key="1"
+              className="download-report-button"
+              href={service.downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <DownloadOutlined />
+              Download Report
+            </a>,
+          ]}
         />
       </div>
 
