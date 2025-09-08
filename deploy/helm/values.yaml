@@ -344,6 +344,7 @@ chromadb:
     name: chromadb-config
     labels:
       app: chromadb
+    isPersistent: TRUE
   storage:
     # type: "manual"
     # pv:
