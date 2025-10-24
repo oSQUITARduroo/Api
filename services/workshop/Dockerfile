@@ -25,7 +25,7 @@ RUN apk add --update --no-cache --virtual .build-deps \
         python3-dev \
         musl-dev \
         libffi-dev \
-        cairo-dev cairo cairo-tools \
+        cairo-dev \
         pkgconfig
 
 ENV PYTHONDONTWRITEBYTECODE=1
