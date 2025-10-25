@@ -25,7 +25,8 @@ RUN apk add --update --no-cache --virtual .build-deps \
         python3-dev \
         musl-dev \
         libffi-dev \
-        cairo-dev
+        cairo-dev \
+        pkgconfig
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -37,7 +38,7 @@ RUN pip install wheel && pip wheel . --wheel-dir /app/wheels
 FROM python:3.11-alpine
 COPY --from=build /app /app
 WORKDIR /app
-RUN apk update && apk add --no-cache postgresql-libs curl
+RUN apk update && apk add --no-cache postgresql-libs curl cairo
 RUN pip install --no-index --find-links=/app/wheels -r requirements.txt
 COPY ./certs /app/certs
 COPY health.sh /app/health.sh
