@@ -27,7 +27,7 @@ import ForgotPassword from "../forgotPassword/forgotPassword";
 import ResetPasswordContainer from "../../containers/resetPassword/resetPassword";
 import DashboardContainer from "../../containers/dashboard/dashboard";
 import MechanicDashboardContainer from "../../containers/mechanicDashboard/mechanicDashboard";
-import VerifyVehicleContainer from "../../containers/verifyVehicle/verifyVehicle";
+import AddVehicleContainer from "../../containers/addVehicle/addVehicle";
 import ContactMechanicContainer from "../../containers/contactMechanic/contactMechanic";
 import ChangeEmail from "../changeEmail/changeEmail";
 import roleTypes from "../../constants/roleTypes";
@@ -305,10 +305,10 @@ const StyledComp: React.FC<PropsFromRedux> = (props) => {
               }
             />
             <Route
-              path="/verify-vehicle"
+              path="/add-vehicle"
               element={
                 <AfterLogin
-                  component={VerifyVehicleContainer}
+                  component={AddVehicleContainer}
                   isLoggedIn={props.isLoggedIn}
                   componentRole={roleTypes.ROLE_USER}
                   userRole={props.role}

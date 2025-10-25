@@ -44,14 +44,27 @@ public class VehicleController {
    * @param vehicleDetails
    * @return response of success and failure message save vehicle Details for user in database
    */
-  @PostMapping("/vehicle/add_vehicle")
+  @PostMapping("/vehicle/create_vehicle")
+  public ResponseEntity<CRAPIResponse> createVehicle(HttpServletRequest request) {
+    CRAPIResponse createVehicleResponse = vehicleService.createVehicle(request);
+    if (createVehicleResponse != null && createVehicleResponse.getStatus() == 200) {
+      return ResponseEntity.status(HttpStatus.OK).body(createVehicleResponse);
+    }
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(createVehicleResponse);
+  }
+
+  /**
+   * @param vehicleDetails
+   * @return response of success and failure message save vehicle Details for user in database
+   */
+  @PostMapping("/vehicle/verify_vehicle")
   public ResponseEntity<CRAPIResponse> addVehicle(
       @Valid @RequestBody VehicleForm vehicleDetails, HttpServletRequest request) {
-    CRAPIResponse checkVehicleResponse = vehicleService.checkVehicle(vehicleDetails, request);
-    if (checkVehicleResponse != null && checkVehicleResponse.getStatus() == 200) {
-      return ResponseEntity.status(HttpStatus.OK).body(checkVehicleResponse);
+    CRAPIResponse verifyVehicleResponse = vehicleService.verifyVehicle(vehicleDetails, request);
+    if (verifyVehicleResponse != null && verifyVehicleResponse.getStatus() == 200) {
+      return ResponseEntity.status(HttpStatus.OK).body(verifyVehicleResponse);
     }
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(checkVehicleResponse);
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(verifyVehicleResponse);
   }
 
   /**

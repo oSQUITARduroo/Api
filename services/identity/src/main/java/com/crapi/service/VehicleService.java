@@ -28,11 +28,13 @@ public interface VehicleService {
 
   VehicleDetails createVehicle();
 
+  CRAPIResponse createVehicle(HttpServletRequest request);
+
   List<VehicleDetails> getVehicleDetails(HttpServletRequest request);
 
   VehicleLocationResponse getVehicleLocation(UUID carId);
 
-  CRAPIResponse checkVehicle(VehicleForm vehicleDetails, HttpServletRequest request);
+  CRAPIResponse verifyVehicle(VehicleForm vehicleDetails, HttpServletRequest request);
 
   CRAPIResponse sendVehicleDetails(HttpServletRequest request);
 }

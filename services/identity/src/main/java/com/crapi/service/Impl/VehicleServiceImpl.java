@@ -109,6 +109,35 @@ public class VehicleServiceImpl implements VehicleService {
 
   /**
    * @param request
+   * @return CRAPIResponse after creating a new vehicle and assigning it to the current user
+   */
+  @Transactional
+  @Override
+  public CRAPIResponse createVehicle(HttpServletRequest request) {
+    User user = null;
+    UserDetails userDetails = null;
+    VehicleDetails vehicleDetails = null;
+
+    user = userService.getUserFromToken(request);
+    if (user == null) {
+      return new CRAPIResponse(UserMessage.TOKEN_VERIFICATION_MISSING, 401);
+    }
+    userDetails = userDetailsRepository.findByUser_id(user.getId());
+    vehicleDetails = createVehicle();
+    if (vehicleDetails != null) {
+      smtpMailServer.sendMail(
+          user.getEmail(),
+          MailBody.newVehicleMailBody(
+              vehicleDetails,
+              (userDetails != null && userDetails.getName() != null ? userDetails.getName() : "")),
+          "Your New Vehicle In crAPI");
+      return new CRAPIResponse(UserMessage.VEHICLE_DETAILS_SENT_TO_EMAIL, 200);
+    }
+    return new CRAPIResponse(UserMessage.INTERNAL_SERVER_ERROR, 500);
+  }
+
+  /**
+   * @param request
    * @return list of vehicle of user
    */
   @Override
@@ -176,7 +205,7 @@ public class VehicleServiceImpl implements VehicleService {
    */
   @Transactional
   @Override
-  public CRAPIResponse checkVehicle(VehicleForm vehicleForm, HttpServletRequest request) {
+  public CRAPIResponse verifyVehicle(VehicleForm vehicleForm, HttpServletRequest request) {
     VehicleDetails checkVehicle = null;
     User user = null;
     checkVehicle = vehicleDetailsRepository.findByVin(vehicleForm.getVin());
@@ -219,7 +248,7 @@ public class VehicleServiceImpl implements VehicleService {
     }
     smtpMailServer.sendMail(
         user.getEmail(),
-        MailBody.signupMailBody(
+        MailBody.newVehicleMailBody(
             vehicleDetails,
             (userDetails != null && userDetails.getName() != null ? userDetails.getName() : "")),
         "Welcome to crAPI");

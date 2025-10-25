@@ -18,20 +18,35 @@ import React from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { Modal } from "antd";
-import { verifyVehicleAction } from "../../actions/vehicleActions";
-import VerifyVehicle from "../../components/verifyVehicle/verifyVehicle";
+import { createVehicleAction, verifyVehicleAction } from "../../actions/vehicleActions";
+import AddVehicle from "../../components/addVehicle/addVehicle";
 import responseTypes from "../../constants/responseTypes";
 import { SUCCESS_MESSAGE } from "../../constants/messages";
 import { useNavigate } from "react-router-dom";
 
-const VerifyVehicleContainer = (props) => {
+const AddVehicleContainer = (props) => {
   const navigate = useNavigate();
-  const { verifyVehicle } = props;
+  const { createVehicle, verifyVehicle } = props;
+  const { accessToken } = props;
 
   const [hasErrored, setHasErrored] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [vehicleCreated, setVehicleCreated] = React.useState(0);
+  const [creationMessage, setCreationMessage] = React.useState("");
 
-  const { accessToken } = props;
+  const onCreateVehicle = () => {
+    setVehicleCreated(1);
+    const callback = (res, data) => {
+      if (res === responseTypes.SUCCESS) {
+        setVehicleCreated(2);
+        setCreationMessage(data);
+      } else {
+        setVehicleCreated(0);
+        setCreationMessage(data);
+      }
+    };
+    createVehicle({ callback, accessToken });
+  };
 
   const onFinish = (values) => {
     const callback = (res, data) => {
@@ -54,10 +69,13 @@ const VerifyVehicleContainer = (props) => {
   };
 
   return (
-    <VerifyVehicle
+    <AddVehicle
       onFinish={onFinish}
       hasErrored={hasErrored}
       errorMessage={errorMessage}
+      onCreateVehicle={onCreateVehicle}
+      vehicleCreated={vehicleCreated}
+      creationMessage={creationMessage}
     />
   );
 };
@@ -67,15 +85,17 @@ const mapStateToProps = ({ userReducer: { accessToken } }) => {
 };
 
 const mapDispatchToProps = {
+  createVehicle: createVehicleAction,
   verifyVehicle: verifyVehicleAction,
 };
 
-VerifyVehicleContainer.propTypes = {
+AddVehicleContainer.propTypes = {
   accessToken: PropTypes.string,
+  createVehicle: PropTypes.func,
   verifyVehicle: PropTypes.func,
 };
 
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(VerifyVehicleContainer);
+)(AddVehicleContainer);
