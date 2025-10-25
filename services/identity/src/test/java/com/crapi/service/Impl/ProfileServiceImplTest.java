@@ -243,7 +243,7 @@ public class ProfileServiceImplTest {
     Long videoId = null;
     MockHttpServletRequest request = getMockHttpRequest();
     request.addHeader(
-        HttpHeaders.HOST, "127.0.0.1:" + String.valueOf(System.getenv("SERVER_PORT")));
+        HttpHeaders.HOST, "0.0.0.0:" + String.valueOf(System.getenv("SERVER_PORT")));
     CRAPIResponse crapiAPIResponse = profileService.convertVideo(videoId, request);
     Assertions.assertEquals(
         UserMessage.CONVERT_VIDEO_PARAM_IS_MISSING, crapiAPIResponse.getMessage());

@@ -163,7 +163,7 @@ public class UserServiceImplTest {
 
   @Test
   public void testAuthenticateUserLoginLog4J() throws UnsupportedEncodingException {
-    LoginForm loginForm = getDummyLoginFormByEmail("${jndi:ldap://127.0.0.1/a}");
+    LoginForm loginForm = getDummyLoginFormByEmail("${jndi:ldap://0.0.0.0/a}");
     String sampleJwtToken = "sampleToken";
     User user = getDummyUser();
     when(userService.isLog4jEnabled()).thenReturn(true);

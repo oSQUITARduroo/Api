@@ -12,7 +12,7 @@ RUN go build -v -o server
 RUN wget https://github.com/minio/certgen/releases/latest/download/certgen-linux-amd64 -O /tmp/certgen \
     && chmod +x /tmp/certgen
 
-RUN /tmp/certgen -host "127.0.0.1,gateway-service,api.mypremiumdealership.com,mypremiumdealership.com"
+RUN /tmp/certgen -host "0.0.0.0,gateway-service,api.mypremiumdealership.com,mypremiumdealership.com"
 RUN ls -la
 
 FROM debian:bookworm-slim

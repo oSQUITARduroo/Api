@@ -17,11 +17,11 @@ pgdg_repository() {
 postgresql_configure() {
 	sudo tee /etc/postgresql/$PGVERSION/main/pg_hba.conf > /dev/null <<-config
 		local     all         all                               trust
-		hostnossl all         pqgossltest 127.0.0.1/32          reject
-		hostnossl all         pqgosslcert 127.0.0.1/32          reject
-		hostssl   all         pqgossltest 127.0.0.1/32          trust
-		hostssl   all         pqgosslcert 127.0.0.1/32          cert
-		host      all         all         127.0.0.1/32          trust
+		hostnossl all         pqgossltest 0.0.0.0/32          reject
+		hostnossl all         pqgosslcert 0.0.0.0/32          reject
+		hostssl   all         pqgossltest 0.0.0.0/32          trust
+		hostssl   all         pqgosslcert 0.0.0.0/32          cert
+		host      all         all         0.0.0.0/32          trust
 		hostnossl all         pqgossltest ::1/128               reject
 		hostnossl all         pqgosslcert ::1/128               reject
 		hostssl   all         pqgossltest ::1/128               trust
@@ -45,7 +45,7 @@ postgresql_configure() {
 		ssl_key_file  = 'server.key'
 	config
 
-	echo 127.0.0.1 postgres | sudo tee -a /etc/hosts > /dev/null
+	echo 0.0.0.0 postgres | sudo tee -a /etc/hosts > /dev/null
 
 	sudo service postgresql restart
 }
