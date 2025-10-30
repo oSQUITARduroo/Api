@@ -50,7 +50,7 @@ func (s *Server) AddNewCoupon(w http.ResponseWriter, r *http.Request) {
 
 	existingCoupon, err := models.ValidateCode(s.Client, s.DB, bson.M{"coupon_code": coupon.CouponCode})
 	if err == nil && existingCoupon.CouponCode != "" {
-		responses.ERROR(w, http.StatusConflict, fmt.Errorf("Coupon code already exists"))
+		responses.ERROR(w, http.StatusConflict, fmt.Errorf("coupon code already exists"))
 		return
 	}
 
