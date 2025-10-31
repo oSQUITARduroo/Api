@@ -35,7 +35,10 @@ import {
   ShoppingCartOutlined,
   GiftOutlined,
 } from "@ant-design/icons";
-import { COUPON_CODE_REQUIRED, COUPON_AMOUNT_REQUIRED } from "../../constants/messages";
+import {
+  COUPON_CODE_REQUIRED,
+  COUPON_AMOUNT_REQUIRED,
+} from "../../constants/messages";
 import { useNavigate } from "react-router-dom";
 import roleTypes from "../../constants/roleTypes";
 
@@ -299,7 +302,14 @@ const mapStateToProps = (state: RootState) => {
   const { accessToken, availableCredit, products, prevOffset, nextOffset } =
     state.shopReducer;
   const { role } = state.userReducer;
-  return { accessToken, availableCredit, products, prevOffset, nextOffset, role };
+  return {
+    accessToken,
+    availableCredit,
+    products,
+    prevOffset,
+    nextOffset,
+    role,
+  };
 };
 
 const connector = connect(mapStateToProps);
