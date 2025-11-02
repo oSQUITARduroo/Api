@@ -37,6 +37,7 @@ import {
 } from "@ant-design/icons";
 import {
   COUPON_CODE_REQUIRED,
+  PRODUCT_DETAILS_REQUIRED,
   COUPON_AMOUNT_REQUIRED,
 } from "../../constants/messages";
 import { useNavigate } from "react-router-dom";
@@ -64,6 +65,11 @@ interface ShopProps extends PropsFromRedux {
   nextOffset: number | null;
   onOffsetChange: (offset: number | null) => void;
   onBuyProduct: (product: Product) => void;
+  isNewProductFormOpen: boolean;
+  setIsNewProductFormOpen: (isOpen: boolean) => void;
+  newProductHasErrored: boolean;
+  newProductErrorMessage: string;
+  onNewProductFinish: (values: any) => void;
   isNewCouponFormOpen: boolean;
   setIsNewCouponFormOpen: (isOpen: boolean) => void;
   newCouponHasErrored: boolean;
@@ -116,6 +122,11 @@ const Shop: React.FC<ShopProps> = (props) => {
     nextOffset,
     onOffsetChange,
     onBuyProduct,
+    isNewProductFormOpen,
+    setIsNewProductFormOpen,
+    newProductHasErrored,
+    newProductErrorMessage,
+    onNewProductFinish,
     isNewCouponFormOpen,
     setIsNewCouponFormOpen,
     newCouponHasErrored,
@@ -189,6 +200,23 @@ const Shop: React.FC<ShopProps> = (props) => {
               </Card>
             </Col>
           ))}
+          {role === roleTypes.ROLE_ADMIN && (
+            <Col span={8} key="new-product-card">
+              <Card
+                className="new-product-card"
+                onClick={() => setIsNewProductFormOpen(true)}
+                cover={<PlusOutlined className="add-icon" />}
+              >
+                <Meta
+                  description={
+                    <div className="product-info product-price">
+                      Add Product
+                    </div>
+                  }
+                />
+              </Card>
+            </Col>
+          )}
         </Row>
         <Row justify="center" className="pagination">
           <Button
@@ -236,6 +264,53 @@ const Shop: React.FC<ShopProps> = (props) => {
             {hasErrored && <div className="error-message">{errorMessage}</div>}
             <Button type="primary" htmlType="submit" className="form-button">
               Validate
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Add New Product"
+        open={isNewProductFormOpen}
+        footer={null}
+        onCancel={() => setIsNewProductFormOpen(false)}
+      >
+        <Form
+          name="basic"
+          initialValues={{
+            remember: true,
+          }}
+          onFinish={onNewProductFinish}
+        >
+          <Form.Item
+            name="name"
+            rules={[{ required: true, message: PRODUCT_DETAILS_REQUIRED }]}
+          >
+            <Input placeholder="Product Name" />
+          </Form.Item>
+          <Form.Item
+            name="price"
+            rules={[
+              { required: true, message: PRODUCT_DETAILS_REQUIRED },
+              {
+                pattern: /^\d+$/,
+                message: "Please enter a valid price!",
+              },
+            ]}
+          >
+            <Input placeholder="Price" type="number" step="1" />
+          </Form.Item>
+          <Form.Item
+            name="image_url"
+            rules={[{ required: true, message: PRODUCT_DETAILS_REQUIRED }]}
+          >
+            <Input placeholder="Image URL (e.g., images/product.svg)" />
+          </Form.Item>
+          <Form.Item>
+            {newProductHasErrored && (
+              <div className="error-message">{newProductErrorMessage}</div>
+            )}
+            <Button type="primary" htmlType="submit" className="form-button">
+              Add
             </Button>
           </Form.Item>
         </Form>
