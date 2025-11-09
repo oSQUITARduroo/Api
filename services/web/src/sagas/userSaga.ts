@@ -269,7 +269,8 @@ export function* signUp(action: MyAction): Generator<any, void, any> {
  * @payload {Function} payload.callback - Callback method
  */
 export function* signUpMechanic(action: MyAction): Generator<any, void, any> {
-  const { name, email, number, mechanic_code, password, callback } = action.payload;
+  const { name, email, number, mechanic_code, password, callback } =
+    action.payload;
   let receivedResponse: Partial<Response> = {};
   try {
     yield put({ type: actionTypes.FETCHING_DATA });
@@ -297,8 +298,10 @@ export function* signUpMechanic(action: MyAction): Generator<any, void, any> {
     });
 
     yield put({ type: actionTypes.FETCHED_DATA, payload: receivedResponse });
-    if (receivedResponse.ok) callback(responseTypes.SUCCESS, responseJSON.message);
-    else callback(responseTypes.FAILURE, responseJSON.message || SIGN_UP_FAILED);
+    if (receivedResponse.ok)
+      callback(responseTypes.SUCCESS, responseJSON.message);
+    else
+      callback(responseTypes.FAILURE, responseJSON.message || SIGN_UP_FAILED);
   } catch (e) {
     yield put({ type: actionTypes.FETCHED_DATA, payload: receivedResponse });
     callback(responseTypes.FAILURE, SIGN_UP_FAILED);

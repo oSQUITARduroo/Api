@@ -20,7 +20,10 @@ import { connect } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Signup from "../../components/signup/signup";
 
-import { signUpUserAction, signUpMechanicAction } from "../../actions/userActions";
+import {
+  signUpUserAction,
+  signUpMechanicAction,
+} from "../../actions/userActions";
 import responseTypes from "../../constants/responseTypes";
 import { SUCCESS_MESSAGE } from "../../constants/messages";
 

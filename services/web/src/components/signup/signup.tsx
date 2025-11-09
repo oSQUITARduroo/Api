@@ -67,22 +67,22 @@ const Signup: React.FC<SignupProps> = ({
   return (
     <div className="container">
       <Card title="Sign Up" bordered={false} className="form-card">
-      <div className="user-type-toggle">
-        <button
-          type="button"
-          className={`toggle-button ${userType === "user" ? "active" : ""}`}
-          onClick={() => handleUserTypeChange("user")}
-        >
-          User
-        </button>
-        <button
-          type="button"
-          className={`toggle-button ${userType === "mechanic" ? "active" : ""}`}
-          onClick={() => handleUserTypeChange("mechanic")}
-        >
-          Mechanic
-        </button>
-      </div>
+        <div className="user-type-toggle">
+          <button
+            type="button"
+            className={`toggle-button ${userType === "user" ? "active" : ""}`}
+            onClick={() => handleUserTypeChange("user")}
+          >
+            User
+          </button>
+          <button
+            type="button"
+            className={`toggle-button ${userType === "mechanic" ? "active" : ""}`}
+            onClick={() => handleUserTypeChange("mechanic")}
+          >
+            Mechanic
+          </button>
+        </div>
         <Form
           name="basic"
           initialValues={{
