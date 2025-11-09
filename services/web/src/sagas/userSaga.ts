@@ -259,6 +259,53 @@ export function* signUp(action: MyAction): Generator<any, void, any> {
 }
 
 /**
+ * Request for new mechanic signup
+
+ * @payload {string} payload.name - User name
+ * @payload {string} payload.email - User email
+ * @payload {string} payload.number - User number
+ * @payload {string} payload.mechanic_code - User mechanic code
+ * @payload {string} payload.password - User password
+ * @payload {Function} payload.callback - Callback method
+ */
+export function* signUpMechanic(action: MyAction): Generator<any, void, any> {
+  const { name, email, number, mechanic_code, password, callback } = action.payload;
+  let receivedResponse: Partial<Response> = {};
+  try {
+    yield put({ type: actionTypes.FETCHING_DATA });
+
+    const postUrl = APIService.WORKSHOP_SERVICE + requestURLS.SIGNUP_MECHANIC;
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    // remove special chars from number
+    let cleanedNumber = number.replace(/[^0-9+]/g, "");
+    console.log("number", cleanedNumber);
+    const responseJSON = yield fetch(postUrl, {
+      headers,
+      method: "POST",
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        number: cleanedNumber,
+        mechanic_code: mechanic_code,
+        password: password,
+      }),
+    }).then((response: Response) => {
+      receivedResponse = response;
+      return response.json();
+    });
+
+    yield put({ type: actionTypes.FETCHED_DATA, payload: receivedResponse });
+    if (receivedResponse.ok) callback(responseTypes.SUCCESS, responseJSON.message);
+    else callback(responseTypes.FAILURE, responseJSON.message || SIGN_UP_FAILED);
+  } catch (e) {
+    yield put({ type: actionTypes.FETCHED_DATA, payload: receivedResponse });
+    callback(responseTypes.FAILURE, SIGN_UP_FAILED);
+  }
+}
+
+/**
  * Send OTP for forgot password
 
  * @payload {string} payload.email - User email
@@ -548,6 +595,7 @@ export function* userActionWatcher() {
   yield takeLatest(actionTypes.VALIDATE_ACCESS_TOKEN, validateAccessToken);
   yield takeLatest(actionTypes.UNLOCK_USER, unlock);
   yield takeLatest(actionTypes.SIGN_UP, signUp);
+  yield takeLatest(actionTypes.SIGN_UP_MECHANIC, signUpMechanic);
   yield takeLatest(actionTypes.VERIFY_OTP, verifyOTP);
   yield takeLatest(actionTypes.FORGOT_PASSWORD, forgotPassword);
   yield takeLatest(actionTypes.RESET_PASSWORD, resetPassword);

@@ -38,6 +38,7 @@ export const requestURLS: RequestURLSType = {
   UNLOCK: "api/auth/unlock",
   GET_USER: "api/v2/user/dashboard",
   SIGNUP: "api/auth/signup",
+  SIGNUP_MECHANIC: "api/mechanic/signup",
   RESET_PASSWORD: "api/v2/user/reset-password",
   FORGOT_PASSWORD: "api/auth/forget-password",
   VERIFY_OTP: "api/auth/v3/check-otp",

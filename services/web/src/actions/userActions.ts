@@ -39,6 +39,7 @@ interface SignUpPayload extends ActionPayload {
   name: string;
   email: string;
   number: string;
+  mechanic_code?: string;
   password: string;
 }
 
@@ -105,6 +106,20 @@ export const signUpUserAction = ({
   return {
     type: actionTypes.SIGN_UP,
     payload: { name, email, number, password, callback },
+  };
+};
+
+export const signUpMechanicAction = ({
+  name,
+  email,
+  number,
+  mechanic_code,
+  password,
+  callback,
+}: SignUpPayload) => {
+  return {
+    type: actionTypes.SIGN_UP_MECHANIC,
+    payload: { name, email, number, mechanic_code, password, callback },
   };
 };
 

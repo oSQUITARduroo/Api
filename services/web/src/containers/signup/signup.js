@@ -20,12 +20,12 @@ import { connect } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Signup from "../../components/signup/signup";
 
-import { signUpUserAction } from "../../actions/userActions";
+import { signUpUserAction, signUpMechanicAction } from "../../actions/userActions";
 import responseTypes from "../../constants/responseTypes";
 import { SUCCESS_MESSAGE } from "../../constants/messages";
 
 const SignupContainer = (props) => {
-  const { signUpUser } = props;
+  const { signUpUser, signUpMechanic } = props;
   const navigate = useNavigate();
 
   const [hasErrored, setHasErrored] = useState(false);
@@ -47,22 +47,28 @@ const SignupContainer = (props) => {
   const onFinish = (values) => {
     signUpUser({ ...values, callback });
   };
+  const onMechanicFinish = (values) => {
+    signUpMechanic({ ...values, callback });
+  };
 
   return (
     <Signup
       hasErrored={hasErrored}
       errorMessage={errorMessage}
       onFinish={onFinish}
+      onMechanicFinish={onMechanicFinish}
     />
   );
 };
 
 const mapDispatchToProps = {
   signUpUser: signUpUserAction,
+  signUpMechanic: signUpMechanicAction,
 };
 
 SignupContainer.propTypes = {
   signUpUser: PropTypes.func,
+  signUpMechanic: PropTypes.func,
 };
 
 export default connect(null, mapDispatchToProps)(SignupContainer);
