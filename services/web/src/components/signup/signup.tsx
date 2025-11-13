@@ -14,7 +14,7 @@
  */
 
 import { Button, Form, Input, Card } from "antd";
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   EMAIL_REQUIRED,
@@ -24,36 +24,71 @@ import {
   CONFIRM_PASSWORD,
   PASSWORD_DO_NOT_MATCH,
   INVALID_PASSWORD,
+  MECHANIC_CODE_REQUIRED,
 } from "../../constants/messages";
 import {
   EMAIL_VALIDATION,
   NAME_VALIDATION,
   PHONE_VALIDATION,
   PASSWORD_VALIDATION,
+  MECHANIC_CODE_VALIDATION,
 } from "../../constants/constants";
+import "./signup.css";
 
 interface SignupProps {
   hasErrored: boolean;
   errorMessage: string;
   onFinish: (values: any) => void;
+  onMechanicFinish: (values: any) => void;
 }
+
+type UserType = "user" | "mechanic";
 
 const Signup: React.FC<SignupProps> = ({
   hasErrored = false,
   errorMessage = "",
   onFinish,
+  onMechanicFinish,
 }) => {
   const navigate = useNavigate();
+  const [userType, setUserType] = useState<UserType>("user");
+
+  const handleUserTypeChange = (type: UserType) => {
+    setUserType(type);
+  };
+  const handleFormSubmit = (values: any) => {
+    if (userType === "user") {
+      onFinish(values);
+    } else {
+      onMechanicFinish(values);
+    }
+  };
 
   return (
     <div className="container">
       <Card title="Sign Up" bordered={false} className="form-card">
+        <div className="user-type-toggle">
+          <button
+            type="button"
+            className={`toggle-button ${userType === "user" ? "active" : ""}`}
+            onClick={() => handleUserTypeChange("user")}
+          >
+            User
+          </button>
+          <button
+            type="button"
+            className={`toggle-button ${userType === "mechanic" ? "active" : ""}`}
+            onClick={() => handleUserTypeChange("mechanic")}
+          >
+            Mechanic
+          </button>
+        </div>
         <Form
           name="basic"
           initialValues={{
             remember: true,
           }}
-          onFinish={onFinish}
+          onFinish={handleFormSubmit}
         >
           <Form.Item
             name="name"
@@ -90,6 +125,20 @@ const Signup: React.FC<SignupProps> = ({
           >
             <Input placeholder="Phone No." />
           </Form.Item>
+          {userType === "mechanic" && (
+            <Form.Item
+              name="mechanic_code"
+              rules={[
+                { required: true, message: MECHANIC_CODE_REQUIRED },
+                {
+                  pattern: MECHANIC_CODE_VALIDATION,
+                  message: MECHANIC_CODE_REQUIRED,
+                },
+              ]}
+            >
+              <Input placeholder="Mechanic Code" />
+            </Form.Item>
+          )}
           <Form.Item
             name="password"
             rules={[
