@@ -6,9 +6,9 @@ metadata:
     release: {{ .Release.Name }}
     {{- toYaml .Values.web.config.labels | nindent 4 }}
 data:
-  COMMUNITY_SERVICE: {{ .Values.community.service.name }}:{{ .Values.community.port }}
-  IDENTITY_SERVICE: {{ .Values.identity.service.name }}:{{ .Values.identity.port }}
-  WORKSHOP_SERVICE: {{ .Values.workshop.service.name }}:{{ .Values.workshop.port }}
-  CHATBOT_SERVICE: {{ .Values.chatbot.service.name }}:{{ .Values.chatbot.port }}
-  MAILHOG_WEB_SERVICE: {{ .Values.mailhog.webService.name }}:{{ .Values.mailhog.webPort }}
+  COMMUNITY_SERVICE: {{ printf "%s:%s" .Values.community.service.name .Values.community.port | quote }}
+  IDENTITY_SERVICE: {{ printf "%s:%s" .Values.identity.service.name .Values.identity.port | quote }}
+  WORKSHOP_SERVICE: {{ printf "%s:%s" .Values.workshop.service.name .Values.workshop.port | quote }}
+  CHATBOT_SERVICE: {{ printf "%s:%s" .Values.chatbot.service.name .Values.chatbot.port | quote }}
+  MAILHOG_WEB_SERVICE: {{ printf "%s:%s" .Values.mailhog.webService.name .Values.mailhog.webPort | quote }}
   TLS_ENABLED: {{ .Values.tlsEnabled | quote }}
