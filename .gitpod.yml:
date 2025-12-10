@@ -1,0 +1,4 @@
+tasks:
+  - name: Start crAPI
+    init: docker-compose build
+    command: docker-compose up
